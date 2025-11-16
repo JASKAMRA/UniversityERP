@@ -1,0 +1,5 @@
+package edu.univ.erp.service;
+
+public class InstructorService {
+    public InstructorService() {}
+}

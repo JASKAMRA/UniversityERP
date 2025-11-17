@@ -1,9 +1,9 @@
 package edu.univ.erp;
 
+import edu.univ.erp.auth.PasswordUtil;
 import edu.univ.erp.data.Dao.UserDao;
 import edu.univ.erp.domain.Role;
 import edu.univ.erp.domain.User;
-import edu.univ.erp.util.PasswordUtil;
 
 public class SeedUser {
     public static void main(String[] args) throws Exception {

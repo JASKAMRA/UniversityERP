@@ -31,7 +31,7 @@ public class NavigationPanel extends JPanel {
             menu.add(loginBtn);
         } else if (role == Role.STUDENT) {
             addButton("Dashboard", () -> main.showCard("STUDENT_DASH"));
-            addButton("Catalog", () -> main.showCard("STUDENT_CATALOG"));
+            addButton("Course Catalog", () -> main.showStudentCatalog());
             addButton("My Registrations", () -> main.showCard("STUDENT_REGS"));
             addButton("Timetable", () -> main.showCard("STUDENT_TIMETABLE"));
             addButton("Grades", () -> main.showCard("STUDENT_GRADES"));

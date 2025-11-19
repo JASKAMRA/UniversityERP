@@ -77,4 +77,14 @@ public class EnrollmentDao {
             ps.executeUpdate();
         }
     }
+
+    public void deleteEnrollment(int id) throws SQLException {
+    String sql = "DELETE FROM enrollments WHERE enrollment_id = ?";
+    try (Connection c = DBConnection.getStudentConnection();
+         PreparedStatement ps = c.prepareStatement(sql)) {
+        ps.setInt(1, id);
+        ps.executeUpdate();
+    }
+}
+
 }

@@ -13,8 +13,8 @@ public class StudentDAO {
     // Insert student. DB student_id is INT AUTO_INCREMENT, domain wants String student_id,
     // so after insert we set domain.setStudentId(String.valueOf(generatedKey))
     public boolean insertStudent(Student s) {
-        String sql = "INSERT INTO students (user_id, roll_num, name, mobile, year, program) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getAuthConnection();
+        String sql = "INSERT INTO students (user_id, roll_no, name, mobile, year, program) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, s.GetID());              // domain GetID() => user_id
@@ -46,8 +46,8 @@ public class StudentDAO {
 
     // Find by PK student_id (int). Maps to domain by setting student_id String.
     public Optional<Student> findById(int studentId) {
-        String sql = "SELECT student_id, user_id, roll_num, name, mobile, year, program FROM students WHERE student_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
+        String sql = "SELECT student_id, user_id, roll_no, name, mobile, year, program FROM students WHERE student_id = ?";
+        try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, studentId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -65,8 +65,8 @@ public class StudentDAO {
 
     // Find by user_id (String)
     public Optional<Student> findByUserId(String userId) {
-        String sql = "SELECT student_id, user_id, roll_num, name, mobile, year, program FROM students WHERE user_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
+        String sql = "SELECT student_id, user_id, roll_no, name, mobile, year, program FROM students WHERE user_id = ?";
+        try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -84,8 +84,8 @@ public class StudentDAO {
 
     // Update by PK (student_id). Domain stores student_id as String so convert to int.
     public boolean updateStudent(Student s) {
-        String sql = "UPDATE students SET user_id = ?, roll_num = ?, name = ?, mobile = ?, year = ?, program = ? WHERE student_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
+        String sql = "UPDATE students SET user_id = ?, roll_no = ?, name = ?, mobile = ?, year = ?, program = ? WHERE student_id = ?";
+        try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, s.GetID());
@@ -110,7 +110,7 @@ public class StudentDAO {
     // Delete by PK
     public boolean deleteById(int studentId) {
         String sql = "DELETE FROM students WHERE student_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
+        try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, studentId);
             int rows = ps.executeUpdate();
@@ -124,7 +124,7 @@ public class StudentDAO {
     // Delete by user_id (useful for TestDao cleanup)
     public boolean deleteByUserId(String userId) {
         String sql = "DELETE FROM students WHERE user_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
+        try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, userId);
             int rows = ps.executeUpdate();
@@ -137,9 +137,9 @@ public class StudentDAO {
 
     // List all
     public List<Student> findAll() {
-        String sql = "SELECT student_id, user_id, roll_num, name, mobile, year, program FROM students";
+        String sql = "SELECT student_id, user_id, roll_no, name, mobile, year, program FROM students";
         List<Student> out = new ArrayList<>();
-        try (Connection conn = DBConnection.getAuthConnection();
+        try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -157,7 +157,7 @@ public class StudentDAO {
     private Student mapRowToStudent(ResultSet rs) throws SQLException {
         Student s = new Student();
         s.SetID(rs.getString("user_id"));         // domain SetID -> user_id
-        s.SetRollNum(rs.getString("roll_num"));   // Roll_num
+        s.SetRollNum(rs.getString("roll_no"));   // Roll_num
         s.SetName(rs.getString("name"));          // name
         s.SetEmail(rs.getString("mobile"));       // WARNING: your domain uses email_id, DB column mobile -> you earlier listed mobile; adjust if domain expects email_id
         // I assigned mobile into email field because domain has email_id; if you want separate mobile field in domain, update domain accordingly.

@@ -104,4 +104,31 @@ public class SectionDao {
             ps.executeUpdate();
         }
     }
+
+    /**
+ * Return a list of rows: [ course_id(String), title(String), credits(Integer), instructor_name(String) ]
+ * This queries sections JOIN courses LEFT JOIN instructors and uses DISTINCT so we show each course once.
+ */
+public java.util.List<Object[]> findCourseSummaries() throws SQLException {
+    String sql =
+        "SELECT DISTINCT s.course_id, c.title, c.credits, COALESCE(i.name, '') AS instructor_name " +
+        "FROM sections s " +
+        "JOIN courses c ON s.course_id = c.course_id " +
+        "LEFT JOIN instructors i ON s.instructor_id = i.user_id";
+
+    java.util.List<Object[]> out = new java.util.ArrayList<>();
+    try (Connection conn = DBConnection.getStudentConnection();
+         PreparedStatement ps = conn.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+            String courseId = rs.getString("course_id");
+            String title = rs.getString("title");
+            int credits = rs.getInt("credits");
+            String instr = rs.getString("instructor_name");
+            out.add(new Object[] { courseId, title, credits, instr });
+        }
+    }
+    return out;
+}
+
 }

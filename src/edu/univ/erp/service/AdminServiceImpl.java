@@ -2,7 +2,7 @@ package edu.univ.erp.service;
 
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.data.Dao.SettingsDao;
-import edu.univ.erp.domain.Setting;
+
 import edu.univ.erp.auth.PasswordUtil;
 
 import java.sql.*;

@@ -78,7 +78,18 @@ public class MainFrame extends JFrame {
     }
 
     public void showForUser(CurrentUser user) {
-        banner.setMaintenance(CurrentSession.get().isMaintenance());
+        boolean maintenance = false;
+    try {
+        maintenance = adminService.isMaintenanceOn();
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        // if DB check fails, fall back to previously stored session value (safer)
+        maintenance = CurrentSession.get() != null && CurrentSession.get().isMaintenance();
+    }
+    // persist in session and update banner UI
+    CurrentSession.get().setMaintenance(maintenance);
+    banner.setMaintenance(maintenance);
+
         nav.loadMenuForRole(user.getRole());
 
         if (user.getRole() == Role.STUDENT) {
@@ -206,4 +217,10 @@ public class MainFrame extends JFrame {
             m.setVisible(true);
         });
     }
+    public void setBannerMaintenance(boolean on) {
+    if (banner != null) banner.setMaintenance(on);
+    // also update session so other parts can read it without DB
+    CurrentSession.get().setMaintenance(on);
+}
+
 }

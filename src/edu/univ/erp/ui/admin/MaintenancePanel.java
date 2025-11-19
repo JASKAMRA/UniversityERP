@@ -1,6 +1,8 @@
 package edu.univ.erp.ui.admin;
 
 import edu.univ.erp.service.AdminService;
+import edu.univ.erp.ui.common.MainFrame;
+import edu.univ.erp.ui.util.CurrentSession;
 
 import javax.swing.*;
 import java.awt.*;
@@ -45,18 +47,35 @@ public class MaintenancePanel extends JPanel {
     }
 
     private void toggle() {
-        try {
-            boolean on = adminService.isMaintenanceOn();
-            boolean ok = adminService.setMaintenance(!on);
-            if (ok) {
-                JOptionPane.showMessageDialog(this, "Maintenance set to " + (!on));
-            } else {
-                JOptionPane.showMessageDialog(this, "Failed to change maintenance.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-            refresh();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    try {
+        boolean on = adminService.isMaintenanceOn();  // current state
+        boolean newState = !on;                       // flipped state
+
+        boolean ok = adminService.setMaintenance(newState);
+
+        if (ok) {
+            // Update session + banner with NEW state
+            CurrentSession.get().setMaintenance(newState);
+            MainFrame.getInstance().setBannerMaintenance(newState);
+
+            JOptionPane.showMessageDialog(this,
+                    "Maintenance set to: " + (newState ? "ON" : "OFF"));
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to change maintenance.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
+
+        refresh();
+
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(this,
+                "Error: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
     }
+}
+
 }

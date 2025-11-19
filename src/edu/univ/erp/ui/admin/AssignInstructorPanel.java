@@ -5,7 +5,7 @@ import edu.univ.erp.data.DBConnection;
 import javax.swing.*;
 import java.awt.*;
 import java.sql.*;
-import java.util.Vector;
+
 
 /**
  * Assign or reassign instructor to a section.

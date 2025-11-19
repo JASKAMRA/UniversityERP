@@ -2,6 +2,7 @@ package edu.univ.erp.ui.admin;
 
 import edu.univ.erp.service.AdminService;
 import edu.univ.erp.service.AdminServiceImpl;
+import edu.univ.erp.ui.common.MainFrame;
 
 import javax.swing.*;
 import java.awt.*;
@@ -70,19 +71,28 @@ public class AdminDashboardPanel extends JPanel {
     }
 
     private void openMaintenancePanel() {
-        MaintenancePanel mp = new MaintenancePanel(adminService);
-        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Maintenance", Dialog.ModalityType.APPLICATION_MODAL);
-        dlg.getContentPane().add(mp);
-        dlg.pack();
-        dlg.setLocationRelativeTo(this);
-        dlg.setVisible(true);
-        try {
-            boolean on = adminService.isMaintenanceOn();
-            lblStatus.setText("Maintenance: " + (on ? "ON" : "OFF"));
-        } catch (Exception ex) {
-            lblStatus.setText("Maintenance: unknown");
+    MaintenancePanel mp = new MaintenancePanel(adminService);
+    JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Maintenance", Dialog.ModalityType.APPLICATION_MODAL);
+    dlg.getContentPane().add(mp);
+    dlg.pack();
+    dlg.setLocationRelativeTo(this);
+    dlg.setVisible(true);
+
+    // After dialog closed - refresh session & banner
+    try {
+        boolean on = adminService.isMaintenanceOn();
+        // update CurrentSession so rest of app can read it
+        edu.univ.erp.ui.util.CurrentSession.get().setMaintenance(on);
+        // update banner in MainFrame immediately
+        if (MainFrame.getInstance() != null) {
+            MainFrame.getInstance().setBannerMaintenance(on);
         }
+        lblStatus.setText("Maintenance: " + (on ? "ON" : "OFF"));
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        lblStatus.setText("Maintenance: (unknown)");
     }
+}
 
     public void loadData() {
         try {

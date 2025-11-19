@@ -1,9 +1,10 @@
 package edu.univ.erp.ui.instructor;
 
-
-
-import edu.univ.erp.service.InstructorService;
+import edu.univ.erp.access.AccessControl;
 import edu.univ.erp.data.DBConnection;
+import edu.univ.erp.domain.Role;
+import edu.univ.erp.ui.util.CurrentSession;
+import edu.univ.erp.service.InstructorService;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -11,11 +12,15 @@ import java.awt.*;
 import java.io.*;
 import java.math.BigDecimal;
 import java.sql.*;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.*;
+import java.util.List;
 
+/**
+ * CSV Import/Export Dialog with:
+ * ✓ Maintenance mode blocking
+ * ✓ Ownership check
+ * ✓ Safe CSV parsing
+ */
 public class CSVImportExportDialog extends JDialog {
 
     public enum Mode { EXPORT, IMPORT }
@@ -48,6 +53,7 @@ public class CSVImportExportDialog extends JDialog {
 
         init();
         pack();
+        setLocationRelativeTo(owner);
     }
 
     private void init() {
@@ -63,11 +69,13 @@ public class CSVImportExportDialog extends JDialog {
 
         taLog = new JTextArea(12,60);
         taLog.setEditable(false);
+        taLog.setMargin(new Insets(6,6,6,6));
         add(new JScrollPane(taLog), BorderLayout.CENTER);
 
         fc = new JFileChooser();
         fc.setFileFilter(new FileNameExtensionFilter("CSV files", "csv"));
 
+        // Choose File Button
         btnChoose.addActionListener(e -> {
             if (mode == Mode.EXPORT) {
                 fc.setDialogType(JFileChooser.SAVE_DIALOG);
@@ -88,23 +96,40 @@ public class CSVImportExportDialog extends JDialog {
             }
         });
 
-        btnRun.addActionListener(e -> {
-            File file = (File) btnChoose.getClientProperty("selectedFile");
-            if (file == null) {
-                JOptionPane.showMessageDialog(this, "Please choose a file.", "No file", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            if (!instructorService.isInstructorOfSection(instructorUserId, sectionId)) {
-                JOptionPane.showMessageDialog(this, "Not your section!", "Permission denied", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (mode == Mode.EXPORT) doExport(file);
-            else doImport(file);
-        });
+        // Run Button (Import/Export)
+        btnRun.addActionListener(e -> runAction());
     }
 
+    private void runAction() {
+        File file = (File) btnChoose.getClientProperty("selectedFile");
+        if (file == null) {
+            JOptionPane.showMessageDialog(this, "Please choose a file.", "No file", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 🔥 Maintenance Check
+        Role role = CurrentSession.get().getUser().getRole();
+        if (!AccessControl.isActionAllowed(role, true)) {
+            JOptionPane.showMessageDialog(this,
+                    "System is in maintenance mode.\nWrite operations (Import/Export) are disabled.",
+                    "Maintenance ON",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 🔥 Ownership Check
+        if (!instructorService.isInstructorOfSection(instructorUserId, sectionId)) {
+            JOptionPane.showMessageDialog(this, "Not your section!", "Permission denied", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (mode == Mode.EXPORT) doExport(file);
+        else doImport(file);
+    }
+
+    // ============================================================
+    // EXPORT CSV
+    // ============================================================
     private void doExport(File file) {
         try (Connection conn = DBConnection.getStudentConnection()) {
             String sql =
@@ -117,6 +142,7 @@ public class CSVImportExportDialog extends JDialog {
 
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, sectionId);
+
             ResultSet rs = ps.executeQuery();
 
             try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
@@ -132,6 +158,7 @@ public class CSVImportExportDialog extends JDialog {
                     );
                 }
             }
+
             taLog.append("Export complete.\n");
 
         } catch (Exception ex) {
@@ -139,6 +166,9 @@ public class CSVImportExportDialog extends JDialog {
         }
     }
 
+    // ============================================================
+    // IMPORT CSV
+    // ============================================================
     private void doImport(File file) {
         try (BufferedReader br = new BufferedReader(new FileReader(file));
              Connection conn = DBConnection.getStudentConnection()) {
@@ -166,6 +196,7 @@ public class CSVImportExportDialog extends JDialog {
         }
     }
 
+    // CSV Helper methods
     private String escape(String s) {
         if (s == null) return "";
         if (s.contains(",") || s.contains("\""))

@@ -1,5 +1,6 @@
 package edu.univ.erp.service;
 
+import edu.univ.erp.access.AccessControl;
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.data.Dao.CourseDao;
 import edu.univ.erp.data.Dao.EnrollmentDao;
@@ -11,6 +12,9 @@ import edu.univ.erp.domain.Enrollment;
 import edu.univ.erp.domain.Section;
 import edu.univ.erp.domain.Student;
 import edu.univ.erp.domain.Status;
+
+import edu.univ.erp.ui.util.CurrentSession;
+import edu.univ.erp.domain.Role;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -46,6 +50,13 @@ public class StudentServiceImpl implements StudentService {
     // ------------------------------------------------------
     @Override
     public boolean registerForSection(String userId, int sectionId) throws Exception {
+
+        // 🔥 Maintenance mode block
+        Role role = CurrentSession.get().getUser().getRole();
+        if (!AccessControl.isActionAllowed(role, true)) {
+            throw new IllegalStateException("System is in maintenance mode. Registration disabled.");
+        }
+
         // resolve user -> student_id
         Optional<Student> stOpt = studentDao.findByUserId(userId);
         if (!stOpt.isPresent()) {
@@ -86,7 +97,7 @@ public class StudentServiceImpl implements StudentService {
                     }
                 }
 
-                // 3) count current enrolled (only count active statuses)
+                // 3) count current enrolled (active)
                 String countSql = "SELECT COUNT(*) FROM enrollments WHERE section_id = ? AND status IN ('ENROLLED','Confirmed','enrolled','confirmed')";
                 int enrolledCount = 0;
                 try (PreparedStatement ps = conn.prepareStatement(countSql)) {
@@ -98,11 +109,11 @@ public class StudentServiceImpl implements StudentService {
 
                 if (capacity != null && enrolledCount >= capacity) {
                     conn.rollback();
-                    System.err.println("[register] no seats left (capacity=" + capacity + ", enrolled=" + enrolledCount + ")");
+                    System.err.println("[register] no seats left");
                     return false;
                 }
 
-                // 4) duplicate check (same section or already in same course)
+                // 4) duplicate check
                 String dupSql =
                         "SELECT COUNT(*) FROM enrollments e " +
                                 "JOIN sections s ON e.section_id = s.section_id " +
@@ -114,18 +125,18 @@ public class StudentServiceImpl implements StudentService {
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next() && rs.getInt(1) > 0) {
                             conn.rollback();
-                            System.err.println("[register] duplicate enrollment detected for student " + studentId);
+                            System.err.println("[register] duplicate enrollment detected");
                             return false;
                         }
                     }
                 }
 
-                // 5) insert enrollment (in same transaction/connection)
+                // 5) insert
                 String insSql = "INSERT INTO enrollments (student_id, section_id, status) VALUES (?, ?, ?)";
                 try (PreparedStatement ps = conn.prepareStatement(insSql, Statement.RETURN_GENERATED_KEYS)) {
                     ps.setString(1, studentId);
                     ps.setInt(2, sectionId);
-                    ps.setString(3, "ENROLLED"); // adapt to your enum string if different
+                    ps.setString(3, "ENROLLED");
                     ps.executeUpdate();
                 }
 
@@ -144,22 +155,11 @@ public class StudentServiceImpl implements StudentService {
     // ------------------------------------------------------
     // MY REGISTRATIONS TABLE (UI)
     // ------------------------------------------------------
-    /**
-     * Returns rows as:
-     * [ 0: enrollment_id (Integer),
-     *   1: course_id     (String),
-     *   2: section_id    (Integer),
-     *   3: day           (String),
-     *   4: semester      (String),
-     *   5: status        (String) ]
-     */
     @Override
     public List<Object[]> getMyRegistrations(String userId) throws Exception {
-        // resolve userId -> student record
+
         Optional<Student> stOpt = studentDao.findByUserId(userId);
-        if (!stOpt.isPresent()) {
-            return Collections.emptyList();
-        }
+        if (!stOpt.isPresent()) return Collections.emptyList();
 
         String studentId = stOpt.get().GetStudentID();
 
@@ -168,23 +168,20 @@ public class StudentServiceImpl implements StudentService {
 
         List<Object[]> rows = new ArrayList<>();
         for (Enrollment e : enrollments) {
-            // load section
             Section sec = sectionDao.findById(e.GetSectionID());
             if (sec == null) continue;
 
-            // load course
             Course c = courseDao.findById(sec.GetCourseID());
             String courseId = (c != null) ? c.GetCourseID() : sec.GetCourseID();
 
-            Object[] row = new Object[]{
-                    e.GetEnrollmentID(),                                      // Integer
-                    courseId,                                                 // String
-                    sec.GetSectionID(),                                       // Integer
-                    sec.GetDay() == null ? "" : sec.GetDay().name(),          // String
-                    sec.GetSemester(),                                        // String
-                    e.GetStatus() == null ? "" : e.GetStatus().name()         // String
-            };
-            rows.add(row);
+            rows.add(new Object[]{
+                    e.GetEnrollmentID(),
+                    courseId,
+                    sec.GetSectionID(),
+                    sec.GetDay() == null ? "" : sec.GetDay().name(),
+                    sec.GetSemester(),
+                    e.GetStatus() == null ? "" : e.GetStatus().name()
+            });
         }
         return rows;
     }
@@ -194,161 +191,168 @@ public class StudentServiceImpl implements StudentService {
     // ------------------------------------------------------
     @Override
     public boolean dropEnrollment(int enrollmentId) throws Exception {
-        // simple delete (you may choose to set status='Dropped' instead)
+
+        // 🔥 Maintenance mode block
+        Role role = CurrentSession.get().getUser().getRole();
+        if (!AccessControl.isActionAllowed(role, true)) {
+            throw new IllegalStateException("System is in maintenance mode. Drop disabled.");
+        }
+
         enrollmentDao.deleteEnrollment(enrollmentId);
         return true;
     }
+
     @Override
-public List<Section> getTimetable(String userId) throws Exception {
-    // find student record by auth user id
-    Optional<Student> stOpt = studentDao.findByUserId(userId);
-    if (!stOpt.isPresent()) return Collections.emptyList();
+    public List<Section> getTimetable(String userId) throws Exception {
 
-    String studentId = stOpt.get().GetStudentID();
+        Optional<Student> stOpt = studentDao.findByUserId(userId);
+        if (!stOpt.isPresent()) return Collections.emptyList();
 
-    // find enrollments
-    List<Enrollment> enrolls = enrollmentDao.findByStudent(studentId);
-    if (enrolls == null || enrolls.isEmpty()) return Collections.emptyList();
+        String studentId = stOpt.get().GetStudentID();
+        List<Enrollment> enrolls = enrollmentDao.findByStudent(studentId);
+        if (enrolls == null || enrolls.isEmpty()) return Collections.emptyList();
 
-    List<Section> out = new ArrayList<>();
-    for (Enrollment e : enrolls) {
-        Section s = sectionDao.findById(e.GetSectionID());
-        if (s != null) out.add(s);
-    }
-
-    // optional: sort by day then by section_id
-    out.sort(Comparator.comparing((Section s) -> s.GetDay() == null ? "" : s.GetDay().name())
-                       .thenComparingInt(Section::GetSectionID));
-    return out;
-}
-@Override
-public File generateTranscriptCsv(String userId) throws Exception {
-    // get registrations (we already implemented getMyRegistrations)
-    List<Object[]> regs = getMyRegistrations(userId); // [enrollId, courseId, sectionId, day, semester, status]
-
-    // create temp file
-    File out = File.createTempFile("transcript_" + userId + "_", ".csv");
-    try (PrintWriter pw = new PrintWriter(out)) {
-        pw.println("Course,Section,Semester,Year,Component,Score,FinalGrade");
-        for (Object[] r : regs) {
-            Integer enrollId = (Integer) r[0];
-            String courseId = String.valueOf(r[1]);
-            Integer sectionId = (Integer) r[2];
-            String semester = String.valueOf(r[4]);
-            // try to find final grade from grades table
-            // you can add a helper in GradeDao; for now we do a simple query here using DBConnection
-            String finalGrade = "";
-            // get grade rows for this enrollment
-            String sql = "SELECT component, score, final_grade FROM grades WHERE enrollment_id = ?";
-            try (Connection conn = DBConnection.getStudentConnection();
-                 PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, enrollId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    boolean foundAny = false;
-                    while (rs.next()) {
-                        foundAny = true;
-                        String comp = rs.getString("component");
-                        BigDecimal score = rs.getBigDecimal("score");
-                        String fg = rs.getString("final_grade");
-                        pw.printf("%s,%d,%s,%s,%s,%s,%s%n",
-                                escapeCsv(courseId),
-                                sectionId,
-                                escapeCsv(semester),
-                                "", // year not fetched here; add if you want
-                                escapeCsv(comp),
-                                score == null ? "" : score.toPlainString(),
-                                escapeCsv(fg)
-                        );
-                    }
-                    if (!foundAny) {
-                        // no grade rows — still write an empty row for course
-                        pw.printf("%s,%d,%s,%s,%s,%s,%s%n",
-                                escapeCsv(courseId),
-                                sectionId,
-                                escapeCsv(semester),
-                                "",
-                                "",
-                                "",
-                                ""
-                        );
-                    }
-                }
-            }
-        }
-    }
-    return out;
-}
-
-private String escapeCsv(String s) {
-    if (s == null) return "";
-    if (s.contains(",") || s.contains("\"") || s.contains("\n")) {
-        s = s.replace("\"", "\"\"");
-        return "\"" + s + "\"";
-    }
-    return s;
-}
-
-@Override
-public List<Object[]> getGrades(String userId) throws Exception {
-    // resolve user -> studentId
-    Optional<Student> stOpt = studentDao.findByUserId(userId);
-    if (!stOpt.isPresent()) return Collections.emptyList();
-    String studentId = stOpt.get().GetStudentID();
-
-    // get enrollments for student
-    List<Enrollment> enrolls = enrollmentDao.findByStudent(studentId);
-    if (enrolls == null || enrolls.isEmpty()) return Collections.emptyList();
-
-    List<Object[]> rows = new ArrayList<>();
-
-    // We'll query grades for each enrollment and also include the course id
-    String sql = "SELECT g.component, g.score, g.final_grade, s.course_id, s.section_id " +
-                 "FROM grades g " +
-                 "JOIN enrollments e ON g.enrollment_id = e.enrollment_id " +
-                 "JOIN sections s ON e.section_id = s.section_id " +
-                 "WHERE e.enrollment_id = ? " +
-                 "ORDER BY g.grade_id";
-
-    try (Connection conn = DBConnection.getStudentConnection()) {
+        List<Section> out = new ArrayList<>();
         for (Enrollment e : enrolls) {
-            boolean any = false;
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, e.GetEnrollmentID());
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        any = true;
-                        String component = rs.getString("component");
-                        BigDecimal score = rs.getBigDecimal("score");
-                        String finalGrade = rs.getString("final_grade");
-                        String courseId = rs.getString("course_id");
-                        Integer sectionId = rs.getInt("section_id");
-                        rows.add(new Object[]{ courseId, sectionId, component, score, finalGrade });
+            Section s = sectionDao.findById(e.GetSectionID());
+            if (s != null) out.add(s);
+        }
+
+        out.sort(Comparator.comparing((Section s) -> s.GetDay() == null ? "" : s.GetDay().name())
+                .thenComparingInt(Section::GetSectionID));
+
+        return out;
+    }
+
+    @Override
+    public File generateTranscriptCsv(String userId) throws Exception {
+
+        List<Object[]> regs = getMyRegistrations(userId);
+
+        File out = File.createTempFile("transcript_" + userId + "_", ".csv");
+        try (PrintWriter pw = new PrintWriter(out)) {
+            pw.println("Course,Section,Semester,Year,Component,Score,FinalGrade");
+
+            for (Object[] r : regs) {
+                Integer enrollId = (Integer) r[0];
+                String courseId = String.valueOf(r[1]);
+                Integer sectionId = (Integer) r[2];
+                String semester = String.valueOf(r[4]);
+
+                String sql = "SELECT component, score, final_grade FROM grades WHERE enrollment_id = ?";
+                try (Connection conn = DBConnection.getStudentConnection();
+                     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                    ps.setInt(1, enrollId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        boolean foundAny = false;
+
+                        while (rs.next()) {
+                            foundAny = true;
+                            String comp = rs.getString("component");
+                            BigDecimal score = rs.getBigDecimal("score");
+                            String fg = rs.getString("final_grade");
+
+                            pw.printf("%s,%d,%s,%s,%s,%s,%s%n",
+                                    escapeCsv(courseId),
+                                    sectionId,
+                                    escapeCsv(semester),
+                                    "",
+                                    escapeCsv(comp),
+                                    score == null ? "" : score.toPlainString(),
+                                    escapeCsv(fg)
+                            );
+                        }
+
+                        if (!foundAny) {
+                            pw.printf("%s,%d,%s,%s,%s,%s,%s%n",
+                                    escapeCsv(courseId),
+                                    sectionId,
+                                    escapeCsv(semester),
+                                    "",
+                                    "",
+                                    "",
+                                    ""
+                            );
+                        }
                     }
                 }
             }
-            if (!any) {
-                // no component rows for this enrollment — still add an empty row so course shows up
-                Section sec = sectionDao.findById(e.GetSectionID());
-                String courseId = sec == null ? "" : sec.GetCourseID();
-                rows.add(new Object[]{ courseId, e.GetSectionID(), "", null, "" });
-            }
         }
+        return out;
     }
 
-    return rows;
-}
+    private String escapeCsv(String s) {
+        if (s == null) return "";
+        if (s.contains(",") || s.contains("\"") || s.contains("\n")) {
+            s = s.replace("\"", "\"\"");
+            return "\"" + s + "\"";
+        }
+        return s;
+    }
 
-@Override
-public String getInstructorNameForSection(edu.univ.erp.domain.Section section) throws Exception {
+    @Override
+    public List<Object[]> getGrades(String userId) throws Exception {
+
+        Optional<Student> stOpt = studentDao.findByUserId(userId);
+        if (!stOpt.isPresent()) return Collections.emptyList();
+
+        String studentId = stOpt.get().GetStudentID();
+        List<Enrollment> enrolls = enrollmentDao.findByStudent(studentId);
+
+        if (enrolls == null || enrolls.isEmpty()) return Collections.emptyList();
+
+        List<Object[]> rows = new ArrayList<>();
+
+        String sql =
+                "SELECT g.component, g.score, g.final_grade, s.course_id, s.section_id " +
+                        "FROM grades g " +
+                        "JOIN enrollments e ON g.enrollment_id = e.enrollment_id " +
+                        "JOIN sections s ON e.section_id = s.section_id " +
+                        "WHERE e.enrollment_id = ? ORDER BY g.grade_id";
+
+        try (Connection conn = DBConnection.getStudentConnection()) {
+            for (Enrollment e : enrolls) {
+                boolean any = false;
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, e.GetEnrollmentID());
+
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            any = true;
+
+                            rows.add(new Object[]{
+                                    rs.getString("course_id"),
+                                    rs.getInt("section_id"),
+                                    rs.getString("component"),
+                                    rs.getBigDecimal("score"),
+                                    rs.getString("final_grade")
+                            });
+                        }
+                    }
+                }
+
+                if (!any) {
+                    Section sec = sectionDao.findById(e.GetSectionID());
+                    String courseId = sec == null ? "" : sec.GetCourseID();
+                    rows.add(new Object[]{courseId, e.GetSectionID(), "", null, ""});
+                }
+            }
+        }
+
+        return rows;
+    }
+
+    @Override
+public String getInstructorNameForSection(Section section) throws Exception {
     if (section == null) return "";
 
-    // instructor id value from Section may be stored as VARCHAR (user_id) or as numeric PK (instructor_id).
     String instrVal = section.GetInstructorID();
     if (instrVal == null || instrVal.trim().isEmpty()) return "";
 
-    // try numeric (instructor_id INT)
     try (Connection conn = DBConnection.getStudentConnection()) {
-        // if numeric -> query by instructor_id (INT)
+
+        // Try numeric instructor_id (INT)
         try {
             int iid = Integer.parseInt(instrVal);
             String q = "SELECT name FROM instructors WHERE instructor_id = ?";
@@ -359,7 +363,7 @@ public String getInstructorNameForSection(edu.univ.erp.domain.Section section) t
                 }
             }
         } catch (NumberFormatException nfe) {
-            // not an integer — try lookup by user_id (VARCHAR)
+            // Fallback → user_id (VARCHAR)
             String q2 = "SELECT name FROM instructors WHERE user_id = ?";
             try (PreparedStatement ps2 = conn.prepareStatement(q2)) {
                 ps2.setString(1, instrVal);
@@ -368,11 +372,12 @@ public String getInstructorNameForSection(edu.univ.erp.domain.Section section) t
                 }
             }
         }
+
     } catch (SQLException ex) {
         ex.printStackTrace();
-        // don't throw fatal — return empty (caller will show blank)
         return "";
     }
+
     return "";
 }
 

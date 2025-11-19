@@ -24,32 +24,34 @@ public class NavigationPanel extends JPanel {
 
     public void loadMenuForRole(Role role) {
         menu.removeAll();
-        // if null -> minimal (login)
+
         if (role == null) {
             JButton loginBtn = new JButton("Login");
             loginBtn.addActionListener(e -> main.showCard(MainFrame.CARD_LOGIN));
             menu.add(loginBtn);
+
         } else if (role == Role.STUDENT) {
-            addButton("Dashboard", () -> main.showCard("STUDENT_DASH"));
+            addButton("Dashboard", () -> main.showCard(MainFrame.CARD_STUDENT_DASH));
             addButton("Course Catalog", () -> main.showStudentCatalog());
             addButton("My Registrations", () -> main.showCard("STUDENT_REGS"));
             addButton("Timetable", () -> main.showCard("STUDENT_TIMETABLE"));
             addButton("Grades", () -> main.showCard("STUDENT_GRADES"));
             addButton("Transcript", () -> main.showCard("STUDENT_TRANSCRIPT"));
             addButton("Logout", this::logout);
+
         } else if (role == Role.INSTRUCTOR) {
-            addButton("Dashboard", () -> main.showCard("INSTR_DASH"));
-            addButton("My Sections", () -> main.showCard("INSTR_SECTIONS"));
-            addButton("Gradebook", () -> main.showCard("INSTR_GRADEBOOK"));
-            addButton("Stats", () -> main.showCard("INSTR_STATS"));
+            addButton("Dashboard", () -> main.showInstructorDashboard());
+            addButton("My Sections", () -> main.showInstructorSections());
+            addButton("Enable Actions", () -> main.enableInstructorActions());
             addButton("Logout", this::logout);
+
         } else if (role == Role.ADMIN) {
-            addButton("Dashboard", () -> main.showCard("ADMIN_DASH"));
+            addButton("Dashboard", () -> main.showCard(MainFrame.CARD_ADMIN_DASH));
             addButton("Users", () -> main.showCard("ADMIN_USERS"));
             addButton("Courses", () -> main.showCard("ADMIN_COURSES"));
             addButton("Sections", () -> main.showCard("ADMIN_SECTIONS"));
             addButton("Assign Instructor", () -> main.showCard("ADMIN_ASSIGN"));
-            addButton("Maintenance", () -> main.showCard("ADMIN_MAINT"));
+            addButton("Maintenance", () -> main.showCard(MainFrame.CARD_ADMIN_DASH));
             addButton("Backup", () -> main.showCard("ADMIN_BACKUP"));
             addButton("Logout", this::logout);
         }

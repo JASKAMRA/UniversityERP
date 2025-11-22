@@ -15,12 +15,20 @@ public class Setting {
         this.key = key;
         this.value = value;
     }
-
-    public String getKey() { return key; }
-    public void setKey(String key) { this.key = key; }
-
-    public String getValue() { return value; }
-    public void setValue(String value) { this.value = value; }
+    //Getter fucntions
+    public String getKey(){ 
+        return key; 
+    }
+    public String getValue(){
+         return value; 
+    }
+    //Setter functions
+    public void setKey(String key){
+         this.key = key; 
+    }
+    public void setValue(String value){ 
+        this.value = value; 
+    }
 
     @Override
     public String toString() {
@@ -29,8 +37,12 @@ public class Setting {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Setting)) return false;
+        if (this == o){ 
+            return true;
+        }
+        if (!(o instanceof Setting)) {
+            return false;
+        }    
         Setting s = (Setting) o;
         return Objects.equals(key, s.key);
     }

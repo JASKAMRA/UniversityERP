@@ -53,12 +53,11 @@ public class Enrollment {
         if(this==object){
             return true;
         }
-        if(object instanceof Enrollment){
-            Enrollment u=(Enrollment) object;
-            return(Objects.equals(enrollment_id,u.enrollment_id));
+        if(!(object instanceof Enrollment)){
+            return false;
         }
-        else{
-            return(false);
-        }
+        Enrollment u=(Enrollment) object;
+        return(Objects.equals(enrollment_id,u.enrollment_id));
+        
     }
 }

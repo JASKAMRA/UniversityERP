@@ -74,13 +74,11 @@ public class User {
         if(this==object){
             return true;
         }
-        if(object instanceof User){
-            User u=(User) object;
-            return(Objects.equals(user_id,u.user_id));
-        }
-        else{
-            return(false);
-        }
+        if(!(object instanceof User)){
+            return false;
+        } 
+        User u=(User) object;
+        return java.util.Objects.equals(user_id,u.user_id);
     }
 
 

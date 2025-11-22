@@ -82,13 +82,12 @@ public class Section {
         if(this==object){
             return true;
         }
-        if(object instanceof Section){
-            Section u=(Section) object;
-            return(Objects.equals(section_id,u.section_id));
+        if(!(object instanceof Section)){
+            return false;
         }
-        else{
-            return(false);
-        }
+        
+        Section u=(Section) object;
+        return java.util.Objects.equals(section_id,u.section_id);
     }
     public String tostring(){
         String a="Section_Type{"+section_id+"("+course_id+")"+"-"+semester+"}";

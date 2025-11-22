@@ -65,12 +65,12 @@ public class Instructor {
             return true;
         }
         if(object instanceof Instructor){
-            Instructor u=(Instructor) object;
-            return(Objects.equals(instructor_id,u.instructor_id));
+            return false;
         }
-        else{
-            return(false);
-        }
+        Instructor u=(Instructor) object;
+        return(Objects.equals(instructor_id,u.instructor_id));
+      
+
     }
     public String tostring(){
         String a="Instructor_Type{"+user_id+"-"+name+"}";

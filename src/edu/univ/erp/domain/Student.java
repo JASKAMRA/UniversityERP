@@ -14,13 +14,13 @@ public class Student {
     public Student(){}
 
     public Student(String student_id,String user_id,String Roll_num,String email,String name,String program,int year){
+        this.name=name;
         this.user_id=user_id;
         this.student_id=student_id;
         this.Roll_num=Roll_num;
-        this.email_id=email;
-        this.name=name;
         this.program=program;
         this.year=year;
+        this.email_id=email;
     }
 
     // now we are adding some getter and setter functions
@@ -80,14 +80,13 @@ public class Student {
         if(this==object){
             return true;
         }
-        if(object instanceof Student){
-            Student u=(Student) object;
-            return(Objects.equals(user_id,u.user_id));
+        if(!(object instanceof Student)){
+            return false;
         }
-        else{
-            return(false);
-        }
-    }
+        Student u = (Student) object;
+        return java.util.Objects.equals(user_id, u.user_id);
+
+}
     public String tostring(){
         String a="Student_Type{"+user_id+"-"+name+"}";
         return(a);

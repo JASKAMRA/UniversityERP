@@ -3,9 +3,9 @@ import java.util.Objects;
 
 public class Course {
     private String department_id;
-    private String title;
-    private String course_id;
     private Integer credits;
+    private String course_id;
+    private String title;
 
     public Course(){}
 
@@ -56,16 +56,14 @@ public class Course {
         if(this==object){
             return true;
         }
-        if(object instanceof Course){
-            Course u=(Course) object;
-            return(Objects.equals(course_id,u.course_id));
+        if(!(object instanceof Course)){
+            return false;
         }
-        else{
-            return(false);
-        }
+        Course u=(Course) object;
+        return(Objects.equals(course_id,u.course_id));
     }
     public String tostring(){
-        String a="Course_Type{"+course_id+"-"+title+"}";
+        String a="Course_Type{"+course_id+" "+title+"}";
         return(a);
     }
 

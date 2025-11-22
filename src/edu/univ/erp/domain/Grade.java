@@ -17,32 +17,49 @@ public class Grade {
 
     public Grade() {}
 
-    public Grade(Integer gradeId, Integer enrollmentId, String component, Double score, String finalGrade) {
+    public Grade(Integer gradeId, Integer enrollmentId, String component, Double score, String finalGrade){
         this.gradeId = gradeId;
-        this.enrollmentId = enrollmentId;
-        this.component = component;
-        this.score = score;
+        this.component = component;  
         this.finalGrade = finalGrade;
-   
+        this.score = score;
+        this.enrollmentId = enrollmentId;
     }
 
-    public Integer getGradeId() { return gradeId; }
-    public void setGradeId(Integer gradeId) { this.gradeId = gradeId; }
+    // Getter fucntions
 
-    public Integer getEnrollmentId() { return enrollmentId; }
-    public void setEnrollmentId(Integer enrollmentId) { this.enrollmentId = enrollmentId; }
+    public Integer getGradeId(){ 
+        return gradeId; 
+    }
+    public Integer getEnrollmentId(){ 
+        return enrollmentId; 
+    }
+    public String getComponent(){ 
+        return component; 
+    }
+    public Double getScore(){ 
+        return score; 
+    }
+    public String getFinalGrade(){ 
+        return finalGrade; 
+    }
 
-    public String getComponent() { return component; }
-    public void setComponent(String component) { this.component = component; }
+    // Setter functions
 
-    public Double getScore() { return score; }
-    public void setScore(Double score) { this.score = score; }
-
-    public String getFinalGrade() { return finalGrade; }
-    public void setFinalGrade(String finalGrade) { this.finalGrade = finalGrade; }
-
-   
-
+    public void setGradeId(Integer gradeId){
+         this.gradeId = gradeId; 
+    }
+    public void setEnrollmentId(Integer enrollmentId){ 
+        this.enrollmentId = enrollmentId; 
+    }
+    public void setComponent(String component){ 
+        this.component = component; 
+    }
+    public void setScore(Double score){ 
+        this.score = score; 
+    }
+    public void setFinalGrade(String finalGrade){ 
+        this.finalGrade = finalGrade; 
+    }
     @Override
     public String toString() {
         return "Grade{" +
@@ -56,8 +73,12 @@ public class Grade {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Grade)) return false;
+        if (this != o) {
+            return true;
+        }    
+        if (!(o instanceof Grade)) {
+            return false;
+        }    
         Grade g = (Grade) o;
         return Objects.equals(gradeId, g.gradeId);
     }

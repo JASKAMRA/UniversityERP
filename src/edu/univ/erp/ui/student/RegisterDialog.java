@@ -4,6 +4,7 @@ import edu.univ.erp.domain.Section;
 import edu.univ.erp.service.StudentService;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -15,6 +16,13 @@ import java.util.concurrent.ExecutionException;
 public class RegisterDialog extends JDialog {
     private boolean registered = false;
 
+    // --- Aesthetic constants ---
+    private static final int PADDING = 15;
+    private static final int GAP = 10;
+    private static final Color PRIMARY_COLOR = new Color(0, 102, 204);
+    private static final Color SUCCESS_COLOR = new Color(50, 160, 50);
+    private static final Font COURSE_TITLE_FONT = new Font("Arial", Font.BOLD, 18);
+
     // small holder to keep Section + label (so JComboBox shows nice text but we keep the Section object)
     private static class SectionItem {
         final Section section;
@@ -24,29 +32,59 @@ public class RegisterDialog extends JDialog {
     }
 
     public RegisterDialog(Window owner, StudentService service, String userId, String courseCode) {
-        super(owner, "Register for " + courseCode, ModalityType.APPLICATION_MODAL);
+        super(owner, "Enrollment: " + courseCode, ModalityType.APPLICATION_MODAL);
+        
+        // Use JPanel container for internal spacing
+        JPanel contentPane = new JPanel(new BorderLayout(GAP, GAP));
+        contentPane.setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
+        contentPane.setBackground(Color.WHITE);
+        
         setLayout(new BorderLayout());
+        add(contentPane, BorderLayout.CENTER);
 
-        JPanel info = new JPanel(new GridLayout(0,1));
-        info.add(new JLabel("Course: " + courseCode));
-        info.add(new JLabel("Select section:"));
-        add(info, BorderLayout.NORTH);
 
+        // --- 1. Info Panel (NORTH) ---
+        JPanel info = new JPanel(new GridLayout(0, 1));
+        info.setBackground(Color.WHITE);
+        
+        JLabel titleLabel = new JLabel("➕ Register for Course: " + courseCode);
+        titleLabel.setFont(COURSE_TITLE_FONT);
+        titleLabel.setForeground(PRIMARY_COLOR);
+        
+        JLabel instructionLabel = new JLabel("Select an available section:");
+        instructionLabel.setBorder(new EmptyBorder(GAP, 0, 0, 0));
+
+        info.add(titleLabel);
+        info.add(instructionLabel);
+        contentPane.add(info, BorderLayout.NORTH);
+
+        // --- 2. Section ComboBox (CENTER) ---
         // JComboBox now holds SectionItem objects
         JComboBox<SectionItem> cbSections = new JComboBox<>();
-        cbSections.setPrototypeDisplayValue(new SectionItem(new Section(), "000 — SEM — cap:000 — Instructor: Some Long Name")); // width hint
-        add(cbSections, BorderLayout.CENTER);
+        cbSections.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        // width hint
+        cbSections.setPrototypeDisplayValue(new SectionItem(new Section(), "000 — SEM — cap:000 — Instructor: Dr. Theodore Long Name")); 
+        contentPane.add(cbSections, BorderLayout.CENTER);
 
-        JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // --- 3. Buttons (SOUTH) ---
+        JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT, GAP, 0));
+        south.setBackground(Color.WHITE);
+        
         JButton btnRegister = new JButton("Register");
         JButton btnCancel = new JButton("Cancel");
+        
+        // Style Buttons
+        btnRegister.setBackground(SUCCESS_COLOR);
+        btnRegister.setForeground(Color.WHITE);
+        btnCancel.setBackground(Color.LIGHT_GRAY);
+
         south.add(btnCancel);
         south.add(btnRegister);
-        add(south, BorderLayout.SOUTH);
+        contentPane.add(south, BorderLayout.SOUTH);
 
         btnCancel.addActionListener(e -> dispose());
 
-        // load sections in background and populate combo with labels that include instructor name
+        // --- 4. Section Loading Logic ---
         btnRegister.setEnabled(false);
         SwingWorker<List<Section>, Void> loader = new SwingWorker<>() {
             @Override
@@ -57,42 +95,51 @@ public class RegisterDialog extends JDialog {
             protected void done() {
                 try {
                     List<Section> secs = get();
+                    cbSections.removeAllItems(); // Clear any default items
+
                     if (secs == null || secs.isEmpty()) {
                         cbSections.addItem(new SectionItem(new Section(), "No sections available"));
                     } else {
                         for (Section s : secs) {
                             String instr = "";
                             try {
-                                // ask service for instructor name (implementation should handle schema differences)
+                                // ask service for instructor name
                                 instr = service.getInstructorNameForSection(s);
                             } catch (Exception ex) {
                                 // non-fatal: leave instructor blank
-                                instr = "";
+                                instr = "Unknown";
                             }
-                            String label = s.GetSectionID()
-                                    + " — " + (s.GetSemester() == null ? "" : s.GetSemester())
-                                    + " / cap:" + s.GetCapacity()
-                                    + (instr == null || instr.isEmpty() ? "" : " — Instructor: " + instr);
+                            // Formatted label for display
+                            String label = String.format("Sec %d — %s, %d / Cap: %d — Instr: %s",
+                                    s.GetSectionID(),
+                                    (s.GetSemester() == null ? "" : s.GetSemester()),
+                                    s.GetYear(),
+                                    s.GetCapacity(),
+                                    (instr == null || instr.isEmpty() ? "TBD" : instr));
+                            
                             cbSections.addItem(new SectionItem(s, label));
                         }
                         btnRegister.setEnabled(true);
                     }
                 } catch (InterruptedException ex) {
+                    cbSections.addItem(new SectionItem(new Section(), "Error loading sections (Interrupted)"));
                     ex.printStackTrace();
                     JOptionPane.showMessageDialog(RegisterDialog.this, "Load interrupted.");
                 } catch (ExecutionException ex) {
-                    ex.printStackTrace();
                     String msg = ex.getCause() != null ? ex.getCause().toString() : ex.toString();
+                    cbSections.addItem(new SectionItem(new Section(), "Error loading sections: " + msg));
+                    ex.printStackTrace();
                     JOptionPane.showMessageDialog(RegisterDialog.this, "Failed to load sections: " + msg, "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
         loader.execute();
 
+        // --- 5. Registration Action ---
         btnRegister.addActionListener(e -> {
             SectionItem selItem = (SectionItem) cbSections.getSelectedItem();
             if (selItem == null || selItem.section == null || selItem.toString().startsWith("No sections") || selItem.toString().startsWith("Error")) {
-                JOptionPane.showMessageDialog(this, "Select a valid section.");
+                JOptionPane.showMessageDialog(this, "Select a valid section to register.");
                 return;
             }
 
@@ -107,25 +154,23 @@ public class RegisterDialog extends JDialog {
                 }
                 @Override
                 protected void done() {
+                    btnRegister.setEnabled(true);
                     try {
                         boolean ok = get();
                         if (ok) {
                             registered = true;
-                            JOptionPane.showMessageDialog(RegisterDialog.this, "Registered successfully.");
+                            JOptionPane.showMessageDialog(RegisterDialog.this, "Registration successful!");
                             dispose();
                         } else {
-                            JOptionPane.showMessageDialog(RegisterDialog.this, "Registration failed (maybe already registered or no seats).");
-                            btnRegister.setEnabled(true);
+                            JOptionPane.showMessageDialog(RegisterDialog.this, "Registration failed (possible reasons: already registered, no seats, or registration deadline passed).", "Registration Failed", JOptionPane.ERROR_MESSAGE);
                         }
                     } catch (InterruptedException ex) {
                         ex.printStackTrace();
                         JOptionPane.showMessageDialog(RegisterDialog.this, "Registration interrupted.");
-                        btnRegister.setEnabled(true);
                     } catch (ExecutionException ex) {
                         ex.printStackTrace();
                         String msg = ex.getCause() != null ? ex.getCause().toString() : ex.toString();
                         JOptionPane.showMessageDialog(RegisterDialog.this, "Registration error: " + msg, "Error", JOptionPane.ERROR_MESSAGE);
-                        btnRegister.setEnabled(true);
                     }
                 }
             };
@@ -133,8 +178,9 @@ public class RegisterDialog extends JDialog {
         });
 
         pack();
-        setSize(520, 260);
+        setSize(550, 200); // Set fixed size for consistency
         setResizable(false);
+        setLocationRelativeTo(owner);
     }
 
     public boolean isRegisteredSuccessfully() {

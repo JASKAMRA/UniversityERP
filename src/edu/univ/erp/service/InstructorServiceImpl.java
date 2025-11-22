@@ -176,14 +176,11 @@ public class InstructorServiceImpl implements InstructorService {
     // inside InstructorServiceImpl
 
 @Override
-public List<Map<String, Object>> getAllSections() {
+public List<Map<String,Object>> getAllSections() {
+    String sql = "SELECT s.section_id, s.course_id, c.title AS course_title, s.day, s.semester, s.year, s.capacity " +
+                 "FROM sections s LEFT JOIN courses c ON s.course_id = c.course_id " +
+                 "ORDER BY s.course_id, s.section_id";
     List<Map<String,Object>> out = new ArrayList<>();
-    String sql =
-        "SELECT s.section_id, s.course_id, c.title AS course_title, s.day, s.capacity, s.semester, s.year, i.user_id AS instructor_user_id " +
-        "FROM sections s " +
-        "LEFT JOIN courses c ON s.course_id = c.course_id " +
-        "LEFT JOIN instructors i ON s.instructor_id = i.instructor_id " +
-        "ORDER BY s.course_id, s.section_id";
     try (Connection conn = DBConnection.getStudentConnection();
          PreparedStatement ps = conn.prepareStatement(sql);
          ResultSet rs = ps.executeQuery()) {
@@ -193,10 +190,9 @@ public List<Map<String, Object>> getAllSections() {
             m.put("course_id", rs.getString("course_id"));
             m.put("course_title", rs.getString("course_title"));
             m.put("day", rs.getString("day"));
-            m.put("capacity", rs.getInt("capacity"));
             m.put("semester", rs.getString("semester"));
             m.put("year", rs.getInt("year"));
-            m.put("instructor_user_id", rs.getString("instructor_user_id"));
+            m.put("capacity", rs.getInt("capacity"));
             out.add(m);
         }
     } catch (SQLException ex) {
@@ -204,6 +200,7 @@ public List<Map<String, Object>> getAllSections() {
     }
     return out;
 }
+
 
 @Override
 public boolean saveGrade(int enrollmentId, String component, BigDecimal score) {

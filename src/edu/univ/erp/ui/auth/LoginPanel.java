@@ -15,7 +15,9 @@ import edu.univ.erp.ui.util.SettingsService;
 import edu.univ.erp.ui.util.UserProfile;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.util.Arrays;
 
 /**
  * LoginPanel that calls AuthServiceBackend (directly) instead of a ui adapter.
@@ -26,17 +28,88 @@ public class LoginPanel extends JPanel {
     private JPasswordField txtPassword = new JPasswordField(20);
     private JButton btnLogin = new JButton("Login");
 
+    // --- Aesthetic constants ---
+    private static final int PADDING = 30;
+    private static final int GAP = 15; // Increased gap
+    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 28); // Increased size
+    private static final Font LABEL_FONT = new Font("Arial", Font.PLAIN, 14);
+    private static final Dimension FIELD_SIZE = new Dimension(280, 35); // Consistent field size
+    private static final Color PRIMARY_COLOR = new Color(30, 80, 130); // Darker, more corporate blue
+    private static final Color BORDER_COLOR = new Color(200, 200, 200);
+
     public LoginPanel(MainFrame main) {
         this.main = main;
-        setLayout(new GridBagLayout());
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(4,4,4,4);
-        c.gridx = 0; c.gridy = 0; add(new JLabel("Username:"), c);
-        c.gridx = 1; add(txtUsername, c);
-        c.gridx = 0; c.gridy = 1; add(new JLabel("Password:"), c);
-        c.gridx = 1; add(txtPassword, c);
-        c.gridx = 1; c.gridy = 2; add(btnLogin, c);
+        
+        // 1. Overall Layout & Styling
+        // Use BorderLayout on the main panel to center the login form (formWrapper)
+        setLayout(new GridBagLayout()); // Using a central GridBagLayout simplifies centering
+        setBackground(Color.WHITE);
+        
+        // 2. Create the wrapper panel for the form elements
+        JPanel formWrapper = new JPanel(new BorderLayout());
+        formWrapper.setBackground(Color.WHITE);
+        formWrapper.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER_COLOR, 1),
+            new EmptyBorder(PADDING, PADDING, PADDING, PADDING)
+        ));
 
+        // 3. Create the centered form panel (GridBagLayout for structure)
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(Color.WHITE);
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(GAP / 2, GAP, GAP / 2, GAP);
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        // --- Title/Header ---
+        JLabel title = new JLabel("🏛️ ERP Access Portal");
+        title.setFont(TITLE_FONT);
+        title.setForeground(PRIMARY_COLOR);
+        title.setBorder(new EmptyBorder(0, 0, GAP * 2, 0)); // Extra space below title
+        c.gridx = 0; c.gridy = 0; c.gridwidth = 2; c.anchor = GridBagConstraints.CENTER;
+        formPanel.add(title, c);
+        
+        // --- Username Label ---
+        c.gridx = 0; c.gridy = 1; c.gridwidth = 1; c.weightx = 0; c.anchor = GridBagConstraints.WEST;
+        JLabel userLabel = new JLabel("Username:");
+        userLabel.setFont(LABEL_FONT);
+        formPanel.add(userLabel, c);
+        
+        // --- Username Field ---
+        c.gridx = 1; c.gridy = 1; c.weightx = 1.0;
+        txtUsername.setPreferredSize(FIELD_SIZE);
+        formPanel.add(txtUsername, c);
+
+        // --- Password Label ---
+        c.gridx = 0; c.gridy = 2; c.weightx = 0;
+        JLabel passLabel = new JLabel("Password:");
+        passLabel.setFont(LABEL_FONT);
+        formPanel.add(passLabel, c);
+        
+        // --- Password Field ---
+        c.gridx = 1; c.gridy = 2; c.weightx = 1.0;
+        txtPassword.setPreferredSize(FIELD_SIZE);
+        formPanel.add(txtPassword, c);
+
+        // --- Login Button ---
+        btnLogin.setFont(btnLogin.getFont().deriveFont(Font.BOLD, 16f));
+        btnLogin.setBackground(PRIMARY_COLOR);
+        btnLogin.setForeground(Color.WHITE);
+        btnLogin.setFocusPainted(false);
+        btnLogin.setPreferredSize(new Dimension(FIELD_SIZE.width, 45)); // Larger button
+        
+        c.gridx = 1; c.gridy = 3; c.gridwidth = 1; c.anchor = GridBagConstraints.EAST; 
+        c.fill = GridBagConstraints.NONE;
+        c.insets = new Insets(GAP * 2, GAP, 0, GAP); // Extra space above button
+        formPanel.add(btnLogin, c);
+        
+        // Add the form panel to the wrapper
+        formWrapper.add(formPanel, BorderLayout.CENTER);
+
+        // Add the wrapper to the main container (GridBagLayout centers content automatically)
+        add(formWrapper, new GridBagConstraints());
+
+        // 4. Action Listener
         btnLogin.addActionListener(e -> onLogin());
     }
 
@@ -48,7 +121,7 @@ public class LoginPanel extends JPanel {
         if (u.isEmpty() || p.isEmpty()) {
             MessageDialog.showError(this, "Enter username and password");
             // zero-out password chars
-            java.util.Arrays.fill(passChars, '\0');
+            Arrays.fill(passChars, '\0');
             return;
         }
 
@@ -57,7 +130,7 @@ public class LoginPanel extends JPanel {
             LoginResult lr = backend.login(u, p);
 
             // zero-out password chars immediately after use
-            java.util.Arrays.fill(passChars, '\0');
+            Arrays.fill(passChars, '\0');
 
             if (lr == null) {
                 MessageDialog.showError(this, "Authentication service error");
@@ -72,7 +145,7 @@ public class LoginPanel extends JPanel {
             // load settings
             boolean maintenance = SettingsService.isMaintenanceOn();
 
-            // Build a UserProfile (UI-friendly) from backend result:
+            // Build a UserProfile (UI-friendly) from backend result (Logic Unchanged):
             UserProfile profileForUI;
             Object profileObj = lr.profile; // may be Student, Instructor, Admin or null
 
@@ -87,13 +160,13 @@ public class LoginPanel extends JPanel {
                 profileForUI = new UserProfile(a.getName(), a.getEmail());
             } else if (lr.user != null) {
                 User user = lr.user;
-                profileForUI = new UserProfile(user.GetUsername(), user.GetEmail());
+                // Fallback for generic user or partially loaded profile
+                profileForUI = new UserProfile(user.GetUsername(), user.GetEmail()); 
             } else {
                 profileForUI = new UserProfile(u, "");
             }
 
             // Now create CurrentUser expected by rest of UI
-            // CurrentUser constructor: CurrentUser(String userId, Role role, UserProfile profile)
             String userId = lr.user != null ? lr.user.GetID() : null;
             Role role = lr.user != null ? lr.user.GetRole() : null;
             CurrentUser cu = new CurrentUser(userId, role, profileForUI);

@@ -1,12 +1,16 @@
 package edu.univ.erp.ui.admin;
 
 import edu.univ.erp.data.DBConnection;
+import edu.univ.erp.auth.PasswordUtil; // Assuming this is needed for PasswordUtil.hash
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.*;
 import java.util.Vector;
+import java.util.UUID;
 
 /**
  * Admin Panel: Manage all system users.
@@ -24,19 +28,32 @@ public class UserManagementPanel extends JPanel {
     private JButton btnDeactivate;
     private JButton btnDeleteUser;
 
+    // --- Aesthetic constants ---
+    private static final int PADDING = 20;
+    private static final int GAP = 12;
+    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 20);
+    private static final Dimension BUTTON_SIZE = new Dimension(170, 35);
+    private static final Color PRIMARY_COLOR = new Color(70, 130, 180); 
+
+
     public UserManagementPanel() {
         initUI();
         loadUsers("ALL");
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(10,10));
+        // 1. Overall Layout and Padding
+        setLayout(new BorderLayout(GAP, GAP));
+        setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
+        setBackground(Color.WHITE);
 
-        JLabel title = new JLabel("User Management");
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 18f));
+        // 2. Title Section (North)
+        JLabel title = new JLabel("👥 System User Management");
+        title.setFont(TITLE_FONT);
+        title.setBorder(new EmptyBorder(0, 0, GAP, 0));
         add(title, BorderLayout.NORTH);
 
-        // === USER TABLE ===
+        // 3. User Table (Center)
         model = new DefaultTableModel(
                 new Object[]{"User ID", "Username", "Role", "Status"},
                 0
@@ -49,30 +66,71 @@ public class UserManagementPanel extends JPanel {
 
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        table.setRowHeight(25);
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+        add(scrollPane, BorderLayout.CENTER);
 
-        // === ACTIONS PANEL ===
+        // 4. Actions Panel (East)
         JPanel right = new JPanel();
-        right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
-        right.setBorder(BorderFactory.createTitledBorder("Actions"));
+        right.setLayout(new GridBagLayout()); // Use GridBag for better control
+        right.setBackground(Color.WHITE);
+        right.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Color.LIGHT_GRAY), 
+            "User Actions", 
+            TitledBorder.LEFT, 
+            TitledBorder.TOP, 
+            new Font("Arial", Font.BOLD, 12), PRIMARY_COLOR));
 
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.gridx = 0; gbc.weightx = 1.0;
+        
+        // Filter + Refresh (Top Group)
         cbRoleFilter = new JComboBox<>(new String[]{"ALL", "STUDENT", "INSTRUCTOR", "ADMIN"});
-        btnRefresh = new JButton("Refresh");
-        btnCreateInstructor = new JButton("Create Instructor");
-        btnActivate = new JButton("Activate");
-        btnDeactivate = new JButton("Deactivate");
-        btnDeleteUser = new JButton("Delete User");
+        cbRoleFilter.setPreferredSize(BUTTON_SIZE);
+        gbc.gridy = 0; right.add(cbRoleFilter, gbc);
 
-        addAction(right, cbRoleFilter);
-        addAction(right, btnRefresh);
-        addAction(right, btnCreateInstructor);
-        addAction(right, btnActivate);
-        addAction(right, btnDeactivate);
-        addAction(right, btnDeleteUser);
+        btnRefresh = new JButton("🔄 Refresh List");
+        styleButton(btnRefresh, Color.LIGHT_GRAY, Color.BLACK);
+        gbc.gridy = 1; right.add(btnRefresh, gbc);
+
+        // Separator
+        gbc.gridy = 2; right.add(Box.createVerticalStrut(GAP), gbc); 
+
+        // Creation
+        btnCreateInstructor = new JButton("➕ Create Instructor");
+        styleButton(btnCreateInstructor, new Color(180, 220, 255), PRIMARY_COLOR);
+        gbc.gridy = 3; right.add(btnCreateInstructor, gbc);
+
+        // Status Change
+        btnActivate = new JButton("✅ Activate User");
+        styleButton(btnActivate, new Color(220, 255, 220), Color.GREEN.darker());
+        gbc.gridy = 4; right.add(btnActivate, gbc);
+        
+        btnDeactivate = new JButton("🛑 Deactivate User");
+        styleButton(btnDeactivate, new Color(255, 220, 220), Color.RED.darker());
+        gbc.gridy = 5; right.add(btnDeactivate, gbc);
+
+        // Separator
+        gbc.gridy = 6; right.add(Box.createVerticalStrut(GAP), gbc);
+
+        // Deletion
+        btnDeleteUser = new JButton("🗑️ Delete User");
+        styleButton(btnDeleteUser, new Color(255, 180, 180), Color.RED);
+        gbc.gridy = 7; right.add(btnDeleteUser, gbc);
+        
+        // Glue to push components up
+        gbc.gridy = 8; gbc.weighty = 1.0;
+        right.add(Box.createVerticalGlue(), gbc);
+
 
         add(right, BorderLayout.EAST);
 
-        // === ACTION LISTENERS ===
+        // 5. Action Listeners
         cbRoleFilter.addActionListener(e -> loadUsers(cbRoleFilter.getSelectedItem().toString()));
         btnRefresh.addActionListener(e -> loadUsers(cbRoleFilter.getSelectedItem().toString()));
         btnCreateInstructor.addActionListener(e -> openCreateInstructorDialog());
@@ -81,14 +139,16 @@ public class UserManagementPanel extends JPanel {
         btnDeleteUser.addActionListener(e -> deleteSelectedUser());
     }
 
-    private void addAction(JPanel p, JComponent c) {
-        c.setAlignmentX(Component.CENTER_ALIGNMENT);
-        p.add(Box.createVerticalStrut(10));
-        p.add(c);
+    private void styleButton(JButton button, Color background, Color foreground) {
+        button.setPreferredSize(BUTTON_SIZE);
+        button.setMinimumSize(BUTTON_SIZE);
+        button.setFocusPainted(false);
+        button.setBackground(background);
+        button.setForeground(foreground);
     }
 
     // ================================================================
-    //  LOAD ALL USERS FROM users_auth (WITH ROLE FILTER)
+    //  LOAD ALL USERS FROM users_auth (WITH ROLE FILTER)
     // ================================================================
 
     private void loadUsers(String roleFilter) {
@@ -97,6 +157,8 @@ public class UserManagementPanel extends JPanel {
         String sql = "SELECT user_id, username, role, status FROM users_auth";
         if (!roleFilter.equals("ALL"))
             sql += " WHERE role = ?";
+        
+        sql += " ORDER BY username"; // Added ordering for better display
 
         try (Connection conn = DBConnection.getAuthConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -125,15 +187,29 @@ public class UserManagementPanel extends JPanel {
         if (row < 0) return null;
         return model.getValueAt(row, 0).toString();
     }
+    
+    // Helper to get selected user's role
+    private String getSelectedUserRole() {
+        int row = table.getSelectedRow();
+        if (row < 0) return null;
+        return model.getValueAt(row, 2).toString();
+    }
 
     // ================================================================
-    //  ACTIVATE / DEACTIVATE USER
+    //  ACTIVATE / DEACTIVATE USER
     // ================================================================
 
     private void changeStatus(String newStatus) {
         String uid = getSelectedUserId();
+        String role = getSelectedUserRole();
+        
         if (uid == null) {
             JOptionPane.showMessageDialog(this, "Select a user.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        if (role.equals("ADMIN") && newStatus.equals("inactive")) {
+            JOptionPane.showMessageDialog(this, "Deactivating an ADMIN user is typically restricted.", "Access Denied", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -144,31 +220,41 @@ public class UserManagementPanel extends JPanel {
             ps.setString(2, uid);
             ps.executeUpdate();
 
-            JOptionPane.showMessageDialog(this, "Updated status → " + newStatus);
+            JOptionPane.showMessageDialog(this, "Updated user status to **" + newStatus.toUpperCase() + "**.");
             loadUsers(cbRoleFilter.getSelectedItem().toString());
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Update failed.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Status update failed.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     // ================================================================
-    //  DELETE USER (AUTH + PROFILE)
+    //  DELETE USER (AUTH + PROFILE)
     // ================================================================
 
     private void deleteSelectedUser() {
         String uid = getSelectedUserId();
+        String username = getSelectedUserUsername();
+        String role = getSelectedUserRole();
+        
         if (uid == null) {
             JOptionPane.showMessageDialog(this, "Select a user first.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        if (role.equals("ADMIN")) {
+            JOptionPane.showMessageDialog(this, "Deleting an ADMIN user is a critical, restricted operation.", "Access Denied", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         int choice = JOptionPane.showConfirmDialog(
                 this,
-                "Are you sure you want to DELETE this user?\nThis will remove their profile as well.",
-                "Confirm Delete",
-                JOptionPane.YES_NO_OPTION
+                "<html>Are you sure you want to DELETE user **" + username + "** (" + role + ")?<br/>" +
+                "**WARNING:** This will permanently remove their user authentication record and profile data.</html>",
+                "🗑️ Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
         );
         if (choice != JOptionPane.YES_OPTION) return;
 
@@ -183,7 +269,7 @@ public class UserManagementPanel extends JPanel {
                 ps.executeUpdate();
             }
 
-            JOptionPane.showMessageDialog(this, "User deleted successfully.");
+            JOptionPane.showMessageDialog(this, "User deleted successfully: " + username);
             loadUsers(cbRoleFilter.getSelectedItem().toString());
 
         } catch (Exception ex) {
@@ -191,6 +277,13 @@ public class UserManagementPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Delete failed.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    
+    private String getSelectedUserUsername() {
+        int row = table.getSelectedRow();
+        if (row < 0) return "N/A";
+        return model.getValueAt(row, 1).toString();
+    }
+
 
     /**
      * Delete profile rows from erp_student:
@@ -215,43 +308,65 @@ public class UserManagementPanel extends JPanel {
             }
 
         } catch (Exception ex) {
+            // Log the error but continue, as failure here shouldn't stop auth deletion
             ex.printStackTrace();
         }
     }
 
     // ================================================================
-    //  CREATE INSTRUCTOR USER DIALOG
+    //  CREATE INSTRUCTOR USER DIALOG
     // ================================================================
 
     private void openCreateInstructorDialog() {
-        JTextField tfUsername = new JTextField();
-        JTextField tfPassword = new JTextField();
-        JTextField tfName = new JTextField();
-        JTextField tfEmail = new JTextField();
-        JTextField tfDept = new JTextField();
+        JTextField tfUsername = new JTextField(15);
+        JPasswordField tfPassword = new JPasswordField(15); // Use JPasswordField
+        JTextField tfName = new JTextField(15);
+        JTextField tfEmail = new JTextField(15);
+        JTextField tfDept = new JTextField(15);
 
-        JPanel panel = new JPanel(new GridLayout(0,2,6,6));
-        panel.add(new JLabel("Username:")); panel.add(tfUsername);
-        panel.add(new JLabel("Password:")); panel.add(tfPassword);
-        panel.add(new JLabel("Name:")); panel.add(tfName);
-        panel.add(new JLabel("Email:")); panel.add(tfEmail);
-        panel.add(new JLabel("Department:")); panel.add(tfDept);
+        // Improved Dialog Layout
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 6, 6, 6);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        int row = 0;
+        
+        // Helper to add rows
+        gbc.gridx = 0; gbc.gridy = row++; panel.add(new JLabel("Username:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0; panel.add(tfUsername, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = row++; panel.add(new JLabel("Password:"), gbc);
+        gbc.gridx = 1; panel.add(tfPassword, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = row++; panel.add(new JLabel("Name:"), gbc);
+        gbc.gridx = 1; panel.add(tfName, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = row++; panel.add(new JLabel("Email (Optional):"), gbc);
+        gbc.gridx = 1; panel.add(tfEmail, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = row++; panel.add(new JLabel("Department (Optional):"), gbc);
+        gbc.gridx = 1; panel.add(tfDept, gbc);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Create Instructor", JOptionPane.OK_CANCEL_OPTION);
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "➕ Create Instructor", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result != JOptionPane.OK_OPTION) return;
+        
+        // Retrieve password correctly from JPasswordField
+        String password = new String(tfPassword.getPassword());
 
         try {
             createInstructorUser(
-                    tfUsername.getText(),
-                    tfPassword.getText(),
-                    tfName.getText(),
-                    tfEmail.getText(),
-                    tfDept.getText()
+                tfUsername.getText().trim(),
+                password,
+                tfName.getText().trim(),
+                tfEmail.getText().trim(),
+                tfDept.getText().trim()
             );
             loadUsers(cbRoleFilter.getSelectedItem().toString());
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to create instructor.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to create instructor: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -261,13 +376,14 @@ public class UserManagementPanel extends JPanel {
     private void createInstructorUser(String username, String password, String name, String email, String dept) throws Exception {
 
         if (username.isEmpty() || password.isEmpty() || name.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Required fields missing.", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Username, password, and name are required fields.", "Warning", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         // 1) Create auth entry
-        String userId = java.util.UUID.randomUUID().toString();
-        String pwHash = edu.univ.erp.auth.PasswordUtil.hash(password);
+        String userId = UUID.randomUUID().toString();
+        // Assuming PasswordUtil is available and correctly imported
+        String pwHash = PasswordUtil.hash(password); 
 
         try (Connection conn = DBConnection.getAuthConnection();
              PreparedStatement ps = conn.prepareStatement(
@@ -277,7 +393,11 @@ public class UserManagementPanel extends JPanel {
             ps.setString(2, username);
             ps.setString(3, pwHash);
             ps.executeUpdate();
+        } catch (SQLIntegrityConstraintViolationException ex) {
+            // Handle unique username constraint violation
+             throw new Exception("Username '" + username + "' already exists.", ex);
         }
+
 
         // 2) Create instructor profile
         try (Connection conn = DBConnection.getStudentConnection();
@@ -291,6 +411,6 @@ public class UserManagementPanel extends JPanel {
             ps.executeUpdate();
         }
 
-        JOptionPane.showMessageDialog(this, "Instructor user created.");
+        JOptionPane.showMessageDialog(this, "Instructor user created successfully (User ID: " + userId + ").");
     }
 }

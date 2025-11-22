@@ -6,6 +6,8 @@ import edu.univ.erp.ui.util.CurrentSession;
 import edu.univ.erp.domain.Role;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.lang.reflect.Method;
@@ -33,6 +35,13 @@ public class GradebookPanel extends JPanel {
     private JButton btnFinalize;
     private JButton btnDefinalize;
 
+    // --- Aesthetic constants ---
+    private static final int PADDING = 15;
+    private static final int GAP = 10;
+    private static final Color PRIMARY_COLOR = new Color(70, 130, 180); // Blue
+    private static final Color SUCCESS_COLOR = new Color(50, 160, 50); // Green
+    private static final Color WARNING_COLOR = new Color(255, 165, 0); // Orange
+
     public GradebookPanel(InstructorService service, int sectionId, String courseTitle, String instructorUserId) {
         this.instructorService = service;
         this.sectionId = sectionId;
@@ -44,41 +53,85 @@ public class GradebookPanel extends JPanel {
     }
 
     private void initComponents() {
-        setLayout(new BorderLayout(10,10));
+        setLayout(new BorderLayout(GAP, GAP));
+        setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
+        setBackground(Color.WHITE);
+        
+        // 1. Header (North)
+        JLabel header = new JLabel("📚 Gradebook: " + courseTitle + " (Section " + sectionId + ")");
+        header.setFont(new Font("Arial", Font.BOLD, 22));
+        header.setForeground(PRIMARY_COLOR);
+        add(header, BorderLayout.NORTH);
 
+        // 2. Gradebook Table (Center)
         model = new DefaultTableModel(
-                new Object[]{"Enrollment ID","Roll No","Name","Component","Score"},0
+                new Object[]{"Enrollment ID", "Roll No", "Name", "Component", "Score"},0
         ) {
             @Override
             public boolean isCellEditable(int r, int c) {
-                return c == 3 || c == 4; // Component & Score editable only
+                // Component (col 3) & Score (col 4) are editable
+                return c == 3 || c == 4; 
+            }
+            // Ensure data types are handled correctly (especially for Score)
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == 4) return BigDecimal.class;
+                return Object.class;
             }
         };
 
         table = new JTable(model);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        table.setRowHeight(25);
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        table.setFont(new Font("Arial", Font.PLAIN, 14));
+        
+        // Style editable columns slightly differently
+        // Note: This requires a custom renderer/editor usually, but basic table appearance is set here.
+        
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+        add(scrollPane, BorderLayout.CENTER);
 
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnSave = new JButton("Save Grade");
-        btnFinalize = new JButton("Finalize Grades");
-        btnDefinalize = new JButton("Definalize Grades");
+        // 3. Action Buttons (South)
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, GAP, GAP));
+        bottom.setBackground(Color.WHITE);
+        
+        btnSave = new JButton("📝 Save Selected Grade");
+        btnFinalize = new JButton("🔒 Finalize All Grades");
+        btnDefinalize = new JButton("🔓 Definalize Grades");
+
+        // Style buttons
+        styleButton(btnSave, PRIMARY_COLOR, Color.WHITE);
+        styleButton(btnFinalize, SUCCESS_COLOR, Color.WHITE);
+        styleButton(btnDefinalize, WARNING_COLOR, Color.BLACK);
 
         bottom.add(btnSave);
         bottom.add(btnFinalize);
         bottom.add(btnDefinalize);
         add(bottom, BorderLayout.SOUTH);
 
+        // 4. Action Listeners
         btnSave.addActionListener(e -> saveSelectedGrade());
         btnFinalize.addActionListener(e -> finalizeSection());
         btnDefinalize.addActionListener(e -> definalizeSection());
     }
 
+    private void styleButton(JButton button, Color bg, Color fg) {
+        button.setFocusPainted(false);
+        button.setBackground(bg);
+        button.setForeground(fg);
+        button.setPreferredSize(new Dimension(180, 35));
+    }
+
     private void loadStudents() {
         model.setRowCount(0);
+        
+        // Note: This assumes getStudentsInSection returns rows with: 
+        // {enrollment_id, roll_no, name, component (optional), score (optional)}
         List<Map<String,Object>> rows = instructorService.getStudentsInSection(sectionId);
         if (rows == null) return;
+        
         for (Map<String,Object> r : rows) {
-            // If your service returns current component/score in the map, include them; else empty.
             Object comp = r.get("component");
             Object score = r.get("score");
             model.addRow(new Object[]{
@@ -91,9 +144,11 @@ public class GradebookPanel extends JPanel {
         }
     }
 
+    /** Checks for Maintenance Mode and Section Ownership before allowing writes. */
     private boolean checkMaintenanceAndOwnership() {
         Role role = CurrentSession.get().getUser().getRole();
-        // Block writes if maintenance ON and user is not allowed
+        
+        // Block writes if maintenance ON
         if (!AccessControl.isActionAllowed(role, true)) {
             JOptionPane.showMessageDialog(this,
                     "System is in maintenance mode. Write operations are disabled.",
@@ -104,7 +159,7 @@ public class GradebookPanel extends JPanel {
 
         // Ownership check
         if (!instructorService.isInstructorOfSection(instructorUserId, sectionId)) {
-            JOptionPane.showMessageDialog(this, "Not your section.", "Permission denied", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "You do not have permission to modify this section's grades.", "Permission denied", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         return true;
@@ -113,7 +168,7 @@ public class GradebookPanel extends JPanel {
     private void saveSelectedGrade() {
         int row = table.getSelectedRow();
         if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Select a student row.", "No row", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Select a student row to save the grade.", "No row selected", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -121,7 +176,7 @@ public class GradebookPanel extends JPanel {
 
         Object enrollObj = model.getValueAt(row, 0);
         if (enrollObj == null) {
-            JOptionPane.showMessageDialog(this, "Invalid enrollment id.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid enrollment ID in the table.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -129,7 +184,7 @@ public class GradebookPanel extends JPanel {
         try {
             enrollmentId = Integer.parseInt(String.valueOf(enrollObj));
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Invalid enrollment id.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid enrollment ID format.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -137,26 +192,30 @@ public class GradebookPanel extends JPanel {
         String scoreStr = String.valueOf(model.getValueAt(row, 4)).trim();
 
         if (comp.isEmpty() || scoreStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Enter component and score.", "Missing fields", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Enter both Grade Component (e.g., Midterm, Final) and Score.", "Missing fields", JOptionPane.WARNING_MESSAGE);
             return;
         }
+        
+        // Ensure component is uppercase as per common convention (if service expects it)
+        comp = comp.toUpperCase();
 
         BigDecimal score;
         try {
             score = new BigDecimal(scoreStr);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Invalid score format.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Score must be a valid number (e.g., 85.5).", "Invalid score format", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        boolean ok = instructorService.saveGrade(enrollmentId, comp.toUpperCase(), score);
+        boolean ok = instructorService.saveGrade(enrollmentId, comp, score);
         if (ok) {
-            JOptionPane.showMessageDialog(this, "Grade saved.");
-            // optionally refresh row or reload table
-            loadStudents();
+            JOptionPane.showMessageDialog(this, "Grade for Component **" + comp + "** saved successfully.");
+            // Update table cell in case comp/score was fixed/normalized by service
+            model.setValueAt(comp, row, 3);
+            model.setValueAt(score, row, 4);
         } else {
             JOptionPane.showMessageDialog(this,
-                    "Failed to save grade.\nThe section might be finalized or a final grade already exists.",
+                    "Failed to save grade. The section might be finalized or enrollment ID is invalid.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE
             );
@@ -168,103 +227,101 @@ public class GradebookPanel extends JPanel {
 
         int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "Are you sure? After this you cannot add/edit grades.",
-                "Confirm Finalize",
-                JOptionPane.YES_NO_OPTION
+                "<html>Are you sure you want to **FINALIZE** grades for Section " + sectionId + "?<br/>" +
+                "This action typically prevents further editing.</html>",
+                "⚠️ Confirm Finalize",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
         );
 
         if (confirm != JOptionPane.YES_OPTION) return;
 
         boolean ok = instructorService.finalizeGrades(sectionId);
         if (ok) {
-            JOptionPane.showMessageDialog(this, "Grades finalized.");
-            loadStudents();
+            JOptionPane.showMessageDialog(this, "Grades successfully finalized.");
+            loadStudents(); // Reload to show final state
         } else {
-            JOptionPane.showMessageDialog(this, "Error finalizing grades.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error finalizing grades. Check if all required grades are entered.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     /**
-     * Attempts to definalize grades. Uses reflection to call a supported method on InstructorService if present.
-     * Checks (maintenance + ownership) before attempting.
+     * Attempts to definalize grades. Uses reflection as a safe fallback.
      */
     private void definalizeSection() {
         if (!checkMaintenanceAndOwnership()) return;
 
         int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "Are you sure? This will allow grades to be edited again.",
-                "Confirm Definalize",
-                JOptionPane.YES_NO_OPTION
+                "<html>Are you sure you want to **DEFINALIZE** grades for Section " + sectionId + "?<br/>" +
+                "This will allow grades to be edited again.</html>",
+                "🔓 Confirm Definalize",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
         );
 
         if (confirm != JOptionPane.YES_OPTION) return;
 
-        // Try common method names via reflection to avoid compile-time dependency:
+        // Try common method names via reflection (Logic Unchanged)
         String[] candidateNames = new String[]{"definalizeGrades", "unfinalizeGrades", "setFinalized"};
-        boolean called = false;
         Exception lastEx = null;
 
         for (String name : candidateNames) {
             try {
                 Method m;
                 Object res = null;
+                
                 if ("setFinalized".equals(name)) {
-                    // signature guess: setFinalized(int sectionId, boolean finalized)
+                    // Try: setFinalized(int sectionId, boolean finalized)
                     try {
                         m = instructorService.getClass().getMethod(name, int.class, boolean.class);
                         res = m.invoke(instructorService, sectionId, false);
                     } catch (NoSuchMethodException ignored) {
-                        // try with Integer param
+                        // Try with wrapper types: setFinalized(Integer sectionId, Boolean finalized)
                         try {
                             m = instructorService.getClass().getMethod(name, Integer.class, Boolean.class);
                             res = m.invoke(instructorService, Integer.valueOf(sectionId), Boolean.FALSE);
                         } catch (NoSuchMethodException ignored2) {
-                            continue;
+                            continue; // Try next candidate
                         }
                     }
                 } else {
-                    // signature guess: boolean name(int sectionId)
+                    // Try: boolean name(int sectionId)
                     m = instructorService.getClass().getMethod(name, int.class);
                     res = m.invoke(instructorService, sectionId);
                 }
 
-                // interpret result
+                // Interpret result
                 if (res instanceof Boolean) {
                     if ((Boolean) res) {
                         JOptionPane.showMessageDialog(this, "Section definalized successfully.");
                         loadStudents();
                         return;
                     } else {
-                        JOptionPane.showMessageDialog(this, "Definalize attempted but service returned false.", "Info", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Definalize attempted but service returned false (operation may not be permitted).", "Info", JOptionPane.INFORMATION_MESSAGE);
                         return;
                     }
                 } else {
-                    // If method didn't return boolean we assume success if no exception
-                    JOptionPane.showMessageDialog(this, "Definalize completed (no boolean result).");
+                    // Assume success if method was called without exception and didn't return boolean
+                    JOptionPane.showMessageDialog(this, "Definalize completed (service returned non-boolean value).");
                     loadStudents();
                     return;
                 }
             } catch (NoSuchMethodException nsme) {
-                // try next candidate
-                continue;
+                continue; // Try next candidate
             } catch (Exception ex) {
                 lastEx = ex;
                 break;
             }
         }
 
-        // If we reach here, we couldn't call any method
+        // If we reach here, we couldn't call any supported method
         if (lastEx != null) {
             lastEx.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error while attempting to definalize: " + lastEx.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error while attempting to definalize: " + lastEx.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this,
-                    "Definalize is not supported by the current InstructorService implementation.\n" +
-                            "If you want this feature, add one of the following methods to InstructorService/Impl:\n" +
-                            "  - boolean definalizeGrades(int sectionId)\n" +
-                            "  - boolean unfinalizeGrades(int sectionId)\n" +
-                            "  - boolean setFinalized(int sectionId, boolean finalized)\n",
+                    "Definalize method not found in InstructorService. Please update the service implementation.",
                     "Not supported",
                     JOptionPane.INFORMATION_MESSAGE);
         }

@@ -4,7 +4,6 @@ import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.domain.Instructor;
 
 import java.sql.*;
-import java.util.Optional;
 
 public class InstructorDAO {
 
@@ -39,8 +38,8 @@ public class InstructorDAO {
         }
     }
 
-    // Find by PK instructor_id (int)
-    public Optional<Instructor> findById(int instructorId) {
+    // Find by PK instructor_id (int). Returns Instructor or null if not found
+    public Instructor findById(int instructorId) {
         String sql = "SELECT instructor_id, user_id, department, name, email FROM instructors WHERE instructor_id = ?";
         try (Connection conn = DBConnection.getAuthConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -49,17 +48,17 @@ public class InstructorDAO {
                 if (rs.next()) {
                     Instructor ins = mapRowToInstructor(rs);
                     ins.SetID(String.valueOf(rs.getInt("instructor_id")));
-                    return Optional.of(ins);
+                    return ins;
                 }
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return Optional.empty();
+        return null;
     }
 
-    // Find by user_id
-    public Optional<Instructor> findByUserId(String userId) {
+    // Find by user_id. Returns Instructor or null if not found
+    public Instructor findByUserId(String userId) {
         String sql = "SELECT instructor_id, user_id, department, name, email FROM instructors WHERE user_id = ?";
         try (Connection conn = DBConnection.getAuthConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -68,13 +67,13 @@ public class InstructorDAO {
                 if (rs.next()) {
                     Instructor ins = mapRowToInstructor(rs);
                     ins.SetID(String.valueOf(rs.getInt("instructor_id")));
-                    return Optional.of(ins);
+                    return ins;
                 }
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return Optional.empty();
+        return null;
     }
 
     // Update by PK (instructor_id)

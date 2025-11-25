@@ -1,147 +1,112 @@
 package edu.univ.erp.ui.admin;
 
 import edu.univ.erp.data.DBConnection;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.sql.*;
 
-
-/**
- * Assign or reassign instructor to a section.
- * Simple UI: choose section, then choose instructor user (by user_id).
- */
-public class AssignInstructorPanel extends JPanel {
-    private JComboBox<String> cbSection;
-    private JComboBox<String> cbInstructor;
-    private JButton btnAssign, btnRefresh;
-
-    // --- Aesthetic constants ---
-    private static final int PADDING = 20;
-    private static final int GAP = 10;
-    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 20);
-    private static final Font LABEL_FONT = new Font("Arial", Font.PLAIN, 14);
-    private static final Dimension BUTTON_SIZE = new Dimension(120, 30);
+public class AssignInstructorPanel extends JPanel{
+    private JComboBox<String> Section;
+    private JComboBox<String> instructor;
+    private JButton Assign_bttn, Refresh_bttn;
 
     public AssignInstructorPanel() {
-        initUI();
-        loadSections();
-        loadInstructors();
+        INITUI();
+        Load_Section();
+        Load_Instructors();
     }
 
-    private void initUI() {
-        // 1. Overall Layout and Padding
-        setLayout(new BorderLayout(GAP, GAP));
-        setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
+    private void INITUI() {
+        setLayout(new BorderLayout(10, 10));
+        setBorder(new EmptyBorder(20, 20, 20, 20));
         setBackground(Color.WHITE);
 
-        // 2. Title Section (North)
-        JLabel title = new JLabel("🧑‍🏫 Assign Section Instructor");
-        title.setFont(TITLE_FONT);
-        title.setBorder(new EmptyBorder(0, 0, GAP, 0)); // Padding below the title
-        add(title, BorderLayout.NORTH);
+        JLabel title = new JLabel("Assign Section Instructor");
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setBorder(new EmptyBorder(0, 0, 10, 0)); 
+        add(title,BorderLayout.NORTH);
 
-        // 3. Center Panel for Form (Using GridBagLayout for precise control)
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBackground(Color.WHITE);
-        formPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY), "Assignment Details"));
+        JPanel FormPanel = new JPanel(new GridBagLayout());
+        FormPanel.setBackground(Color.WHITE);
+        FormPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY), "Assignment Details"));
 
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(GAP / 2, GAP, GAP / 2, GAP);
-        c.fill = GridBagConstraints.HORIZONTAL;
+        GridBagConstraints Constraint = new GridBagConstraints();
+        Constraint.insets = new Insets(5, 10, 5, 10);
+        Constraint.gridx = 0; Constraint.gridy = 0; Constraint.weightx = 0.3;
+        Constraint.fill = GridBagConstraints.HORIZONTAL;
 
-        // Row 1: Section Selection
-        c.gridx = 0; c.gridy = 0; c.weightx = 0.3;
-        JLabel sectionLabel = new JLabel("Section (ID - Course ID):");
-        sectionLabel.setFont(LABEL_FONT);
-        formPanel.add(sectionLabel, c);
+        JLabel Section_Label=new JLabel("Section (ID - Course ID):");
+        Section_Label.setFont(new Font("Arial", Font.PLAIN, 14));
+        FormPanel.add(Section_Label,Constraint);
 
-        c.gridx = 1; c.gridy = 0; c.weightx = 0.7;
-        cbSection = new JComboBox<>();
-        formPanel.add(cbSection, c);
-
-        // Row 2: Instructor Selection
-        c.gridx = 0; c.gridy = 1; c.weightx = 0.3;
-        JLabel instructorLabel = new JLabel("Instructor (User ID - Name):");
-        instructorLabel.setFont(LABEL_FONT);
-        formPanel.add(instructorLabel, c);
-
-        c.gridx = 1; c.gridy = 1; c.weightx = 0.7;
-        cbInstructor = new JComboBox<>();
-        formPanel.add(cbInstructor, c);
-
-        // Spacer to push components to the top/center
-        c.gridx = 0; c.gridy = 2; c.weighty = 1.0; // Give vertical weight to this empty cell
-        formPanel.add(Box.createVerticalGlue(), c);
+        Constraint.gridx=1;Constraint.gridy=0;Constraint.weightx=0.7;
+        Section=new JComboBox<>();
+        FormPanel.add(Section,Constraint);
 
 
-        // Wrap the formPanel in a flow layout to prevent it from stretching horizontally
-        JPanel wrapCenter = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        wrapCenter.setBackground(Color.WHITE);
-        wrapCenter.add(formPanel);
+        Constraint.gridx=0;Constraint.gridy=1;Constraint.weightx=0.3;
+        JLabel instructorLabel=new JLabel("Instructor:");
+        instructorLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        FormPanel.add(instructorLabel, Constraint);
 
-        add(wrapCenter, BorderLayout.CENTER);
+        Constraint.gridx=1;Constraint.gridy=1;Constraint.weightx=0.7;
+        instructor=new JComboBox<>();
+        FormPanel.add(instructor,Constraint);
 
-        // 4. Bottom Panel for Actions (South)
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, GAP, 0)); // Right aligned
-        bottom.setBackground(Color.WHITE);
+        Constraint.gridx=0;Constraint.gridy=2;Constraint.weighty=1.0; 
+        FormPanel.add(Box.createVerticalGlue(),Constraint);
 
-        btnRefresh = new JButton("🔄 Refresh Data");
-        btnAssign = new JButton("✅ Assign Instructor");
-
-        // Style Buttons
-        styleButton(btnRefresh);
-        styleButton(btnAssign);
-        btnAssign.setBackground(new Color(60, 140, 240)); // Highlight Assign button
-        btnAssign.setForeground(Color.WHITE);
-
-
-        bottom.add(btnRefresh);
-        bottom.add(btnAssign);
-        add(bottom, BorderLayout.SOUTH);
-
-        // 5. Action Listeners (Functionality unchanged)
-        btnRefresh.addActionListener(e -> { loadSections(); loadInstructors(); });
-        btnAssign.addActionListener(e -> doAssign());
+        JPanel CENTER_wrap=new JPanel(new FlowLayout(FlowLayout.CENTER));
+        CENTER_wrap.setBackground(Color.WHITE);
+        CENTER_wrap.add(FormPanel);
+        add(CENTER_wrap, BorderLayout.CENTER);
+        JPanel Bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0)); 
+        Bottom.setBackground(Color.WHITE);
+        Refresh_bttn = new JButton("🔄 Refresh Data");
+        Assign_bttn = new JButton("✅ Assign Instructor");
+        Style_Button(Refresh_bttn);
+        Style_Button(Assign_bttn);
+        Assign_bttn.setBackground(new Color(60, 140, 240)); 
+        Assign_bttn.setForeground(Color.WHITE);
+        Bottom.add(Refresh_bttn);
+        Bottom.add(Assign_bttn);
+        add(Bottom,BorderLayout.SOUTH);
+        Refresh_bttn.addActionListener(e->{Load_Section();Load_Instructors(); });
+        Assign_bttn.addActionListener(e->doAssign());
     }
-
-    /**
-     * Helper method to apply consistent styling to buttons.
-     */
-    private void styleButton(JButton button) {
-        button.setPreferredSize(BUTTON_SIZE);
+    private void Style_Button(JButton button) {
+        button.setPreferredSize(new Dimension(120, 30));
         button.setFocusPainted(false);
     }
 
-    // --- Existing Functionality Methods (Unchanged logic) ---
 
-    private void loadSections() {
-        cbSection.removeAllItems();
+    private void Load_Section() {
+        Section.removeAllItems();
         String sql = "SELECT s.section_id, s.course_id FROM sections s ORDER BY s.section_id";
-        try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection conn=DBConnection.getStudentConnection();
+             PreparedStatement prepared_statement=conn.prepareStatement(sql);
+             ResultSet rs=prepared_statement.executeQuery()) {
             while (rs.next()) {
-                String item = rs.getInt("section_id") + " - " + rs.getString("course_id");
-                cbSection.addItem(item);
+                String item=rs.getInt("Section_id")+" - " + rs.getString("Course_id");
+                Section.addItem(item);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to load sections.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to load sections.", "ERROR", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void loadInstructors() {
-        cbInstructor.removeAllItems();
+    private void Load_Instructors() {
+        instructor.removeAllItems();
         String sql = "SELECT i.instructor_id, i.user_id, i.name FROM instructors i ORDER BY i.name";
         try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 String item = rs.getString("user_id") + " - " + rs.getString("name");
-                cbInstructor.addItem(item);
+                instructor.addItem(item);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -150,8 +115,8 @@ public class AssignInstructorPanel extends JPanel {
     }
 
     private void doAssign() {
-        String secSel = (String) cbSection.getSelectedItem();
-        String instSel = (String) cbInstructor.getSelectedItem();
+        String secSel = (String) Section.getSelectedItem();
+        String instSel = (String) instructor.getSelectedItem();
         if (secSel == null || instSel == null) { JOptionPane.showMessageDialog(this, "Select both section and instructor.", "Warning", JOptionPane.WARNING_MESSAGE); return; }
 
         int sectionId = Integer.parseInt(secSel.split(" - ")[0].trim());

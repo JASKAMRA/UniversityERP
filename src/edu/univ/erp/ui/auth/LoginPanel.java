@@ -17,170 +17,163 @@ import edu.univ.erp.ui.util.UserProfile;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.util.Arrays;
 
-/**
- * LoginPanel that calls AuthServiceBackend (directly) instead of a ui adapter.
- */
+
 public class LoginPanel extends JPanel {
     private MainFrame main;
-    private JTextField txtUsername = new JTextField(20);
-    private JPasswordField txtPassword = new JPasswordField(20);
-    private JButton btnLogin = new JButton("Login");
+    private JPasswordField Password_txt = new JPasswordField(20);
+    private JTextField Username_txt = new JTextField(20);
+    private JButton Login_button = new JButton("Login");
 
-    // --- Aesthetic constants ---
-    private static final int PADDING = 30;
-    private static final int GAP = 15; // Increased gap
-    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 28); // Increased size
-    private static final Font LABEL_FONT = new Font("Arial", Font.PLAIN, 14);
-    private static final Dimension FIELD_SIZE = new Dimension(280, 35); // Consistent field size
-    private static final Color PRIMARY_COLOR = new Color(30, 80, 130); // Darker, more corporate blue
-    private static final Color BORDER_COLOR = new Color(200, 200, 200);
+    private static final Color PRIMARY_COLOR = new Color(30, 80, 130); 
+  
 
     public LoginPanel(MainFrame main) {
         this.main = main;
-        
-        // 1. Overall Layout & Styling
-        // Use BorderLayout on the main panel to center the login form (formWrapper)
-        setLayout(new GridBagLayout()); // Using a central GridBagLayout simplifies centering
+        setLayout(new GridBagLayout());
         setBackground(Color.WHITE);
-        
-        // 2. Create the wrapper panel for the form elements
-        JPanel formWrapper = new JPanel(new BorderLayout());
-        formWrapper.setBackground(Color.WHITE);
-        formWrapper.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_COLOR, 1),
-            new EmptyBorder(PADDING, PADDING, PADDING, PADDING)
-        ));
 
-        // 3. Create the centered form panel (GridBagLayout for structure)
+        JPanel Wrapper=new JPanel(new BorderLayout());
+        Wrapper.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+            new EmptyBorder(30,30,30,30)
+        ));
+        Wrapper.setBackground(Color.WHITE);
+    
+        //creating the form
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(Color.WHITE);
         GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(GAP / 2, GAP, GAP / 2, GAP);
+        c.insets = new Insets(15/2, 15, 15 / 2, 15);
         c.anchor = GridBagConstraints.WEST;
         c.fill = GridBagConstraints.HORIZONTAL;
 
-        // --- Title/Header ---
-        JLabel title = new JLabel("🏛️ ERP Access Portal");
-        title.setFont(TITLE_FONT);
+
+        //title for the page
+        JLabel title = new JLabel("ERP PORTAL🎓");
+        title.setFont(new Font("Arial", Font.BOLD, 28));
         title.setForeground(PRIMARY_COLOR);
-        title.setBorder(new EmptyBorder(0, 0, GAP * 2, 0)); // Extra space below title
-        c.gridx = 0; c.gridy = 0; c.gridwidth = 2; c.anchor = GridBagConstraints.CENTER;
+        title.setBorder(new EmptyBorder(0, 0, 30, 0));
+        c.gridx = 0;
+        c.gridy = 0; 
+        c.anchor = GridBagConstraints.CENTER;
+        c.gridwidth = 2;
         formPanel.add(title, c);
         
-        // --- Username Label ---
+        //Username Label
         c.gridx = 0; c.gridy = 1; c.gridwidth = 1; c.weightx = 0; c.anchor = GridBagConstraints.WEST;
         JLabel userLabel = new JLabel("Username:");
-        userLabel.setFont(LABEL_FONT);
+        userLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         formPanel.add(userLabel, c);
         
-        // --- Username Field ---
         c.gridx = 1; c.gridy = 1; c.weightx = 1.0;
-        txtUsername.setPreferredSize(FIELD_SIZE);
-        formPanel.add(txtUsername, c);
+        Username_txt.setPreferredSize(new Dimension(280, 35));
+        formPanel.add(Username_txt, c);
 
-        // --- Password Label ---
-        c.gridx = 0; c.gridy = 2; c.weightx = 0;
-        JLabel passLabel = new JLabel("Password:");
-        passLabel.setFont(LABEL_FONT);
+
+        //Password
+        c.gridx= 0; c.gridy= 2; c.weightx= 0;
+        JLabel passLabel= new JLabel("Password:");
+        passLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         formPanel.add(passLabel, c);
         
-        // --- Password Field ---
-        c.gridx = 1; c.gridy = 2; c.weightx = 1.0;
-        txtPassword.setPreferredSize(FIELD_SIZE);
-        formPanel.add(txtPassword, c);
+        c.gridx= 1; c.gridy= 2; c.weightx= 1.0;
+        Password_txt.setPreferredSize(new Dimension(280, 35));
+        formPanel.add(Password_txt, c);
 
-        // --- Login Button ---
-        btnLogin.setFont(btnLogin.getFont().deriveFont(Font.BOLD, 16f));
-        btnLogin.setBackground(PRIMARY_COLOR);
-        btnLogin.setForeground(Color.WHITE);
-        btnLogin.setFocusPainted(false);
-        btnLogin.setPreferredSize(new Dimension(FIELD_SIZE.width, 45)); // Larger button
+
+        //Login
+        Login_button.setFont(Login_button.getFont().deriveFont(Font.BOLD, 16f));
+        Login_button.setBackground(PRIMARY_COLOR);
+        Login_button.setForeground(Color.WHITE);
+        Login_button.setFocusPainted(false);
+        Login_button.setPreferredSize(new Dimension(new Dimension(280, 35).width, 45)); // Larger button
         
-        c.gridx = 1; c.gridy = 3; c.gridwidth = 1; c.anchor = GridBagConstraints.EAST; 
-        c.fill = GridBagConstraints.NONE;
-        c.insets = new Insets(GAP * 2, GAP, 0, GAP); // Extra space above button
-        formPanel.add(btnLogin, c);
+        c.gridx= 1; c.gridy= 3; c.gridwidth= 1; c.anchor= GridBagConstraints.EAST; 
+        c.fill= GridBagConstraints.NONE;
+        c.insets= new Insets(30,30,0,30); 
+        formPanel.add(Login_button, c);
+
+        //Change Password
+
+        JButton btnChangePassword = new JButton("Change Password");
+        btnChangePassword.setToolTipText("Click to change your password (provide username and existing password)");
+        formPanel.add(btnChangePassword);
         
-        // Add the form panel to the wrapper
-        formWrapper.add(formPanel, BorderLayout.CENTER);
-
-        // Add the wrapper to the main container (GridBagLayout centers content automatically)
-        add(formWrapper, new GridBagConstraints());
-
-        // 4. Action Listener
-        btnLogin.addActionListener(e -> onLogin());
+  
+        Wrapper.add(formPanel, BorderLayout.CENTER);
+        add(Wrapper, new GridBagConstraints());
+        Login_button.addActionListener(e -> After_Login_Button());
+        btnChangePassword.addActionListener(e -> {
+        ChangePasswordDialog dlg = new ChangePasswordDialog(SwingUtilities.getWindowAncestor(this));
+        dlg.setLocationRelativeTo(this);
+        dlg.setVisible(true);
+});
     }
 
-    private void onLogin() {
-        String u = txtUsername.getText().trim();
-        char[] passChars = txtPassword.getPassword();
-        String p = new String(passChars);
-
-        if (u.isEmpty() || p.isEmpty()) {
+    private void After_Login_Button() {
+        String u = Username_txt.getText().trim();
+        String p = new String(Password_txt.getPassword());
+        if (u.isEmpty()){
             MessageDialog.showError(this, "Enter username and password");
-            // zero-out password chars
-            Arrays.fill(passChars, '\0');
             return;
         }
-
+        if(p.isEmpty()){
+            MessageDialog.showError(this, "Enter username and password");
+            return;
+        }
         try {
             AuthServiceBackend backend = new AuthServiceBackend();
-            LoginResult lr = backend.login(u, p);
-
-            // zero-out password chars immediately after use
-            Arrays.fill(passChars, '\0');
-
-            if (lr == null) {
-                MessageDialog.showError(this, "Authentication service error");
+            LoginResult Login_result = backend.login(u, p);
+            if (Login_result == null) {
+                MessageDialog.showError(this, "Authentication error ");
+                return;
+            }if (!Login_result.success) {
+                MessageDialog.showError(this, Login_result.message);
                 return;
             }
+            boolean maintenance= SettingsService.isMaintenanceOn();
+            UserProfile Profile_on_UI;
+            Object Profile_recieved= Login_result.profile;
 
-            if (!lr.success) {
-                MessageDialog.showError(this, lr.message);
-                return;
+            if(Profile_recieved instanceof Student){
+                Student Stu=(Student) Profile_recieved;
+                Profile_on_UI=new UserProfile(Stu.GetName(),Stu.GetEmail());
+            }                                                                      
+            else if(Profile_recieved instanceof Admin){
+                Admin Stu=(Admin) Profile_recieved;
+                Profile_on_UI=new UserProfile(Stu.GetName(),Stu.GetEmail());
+            }
+            else if(Profile_recieved instanceof Instructor){
+                Instructor Stu=(Instructor) Profile_recieved;
+                Profile_on_UI=new UserProfile(Stu.GetName(),Stu.GetEmail());
+            }
+            else if(Login_result.user!=null){
+                User user =Login_result.user;
+                Profile_on_UI=new UserProfile(user.GetUsername(),user.GetEmail());
+            }
+            else{
+                Profile_on_UI=new UserProfile(u,"");
             }
 
-            // load settings
-            boolean maintenance = SettingsService.isMaintenanceOn();
-
-            // Build a UserProfile (UI-friendly) from backend result (Logic Unchanged):
-            UserProfile profileForUI;
-            Object profileObj = lr.profile; // may be Student, Instructor, Admin or null
-
-            if (profileObj instanceof Student) {
-                Student s = (Student) profileObj;
-                profileForUI = new UserProfile(s.GetName(), s.GetEmail());
-            } else if (profileObj instanceof Instructor) {
-                Instructor i = (Instructor) profileObj;
-                profileForUI = new UserProfile(i.GetName(), i.GetEmail());
-            } else if (profileObj instanceof Admin) {
-                Admin a = (Admin) profileObj;
-                profileForUI = new UserProfile(a.getName(), a.getEmail());
-            } else if (lr.user != null) {
-                User user = lr.user;
-                // Fallback for generic user or partially loaded profile
-                profileForUI = new UserProfile(user.GetUsername(), user.GetEmail()); 
+            String UserId;
+            Role Role;
+            if (Login_result.user!= null) {
+                UserId= Login_result.user.GetID();
+                Role= Login_result.user.GetRole();
             } else {
-                profileForUI = new UserProfile(u, "");
-            }
+                UserId= null;
+                Role= null;
+}
 
-            // Now create CurrentUser expected by rest of UI
-            String userId = lr.user != null ? lr.user.GetID() : null;
-            Role role = lr.user != null ? lr.user.GetRole() : null;
-            CurrentUser cu = new CurrentUser(userId, role, profileForUI);
 
-            // set session
-            CurrentSession.get().setUser(cu);
-            CurrentSession.get().setMaintenance(maintenance);
-
-            // show main
-            main.showForUser(cu);
-
-        } catch (Exception ex) {
+            CurrentUser current_user = new CurrentUser(UserId, Role, Profile_on_UI);
+            CurrentSession.get().SetMantanence(maintenance);
+            CurrentSession.get().setUser(current_user);
+            
+            main.show_to_user(current_user);
+        } catch (Exception ex) {                  
             ex.printStackTrace();
-            MessageDialog.showError(this, "Login error: " + ex.getMessage());
-        }
-    }
+            MessageDialog.showError(this,"Login error"+ ex.getMessage());
+        }}
 }

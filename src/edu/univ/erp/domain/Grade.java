@@ -1,18 +1,11 @@
 package edu.univ.erp.domain;
-
-
 import java.util.Objects;
-
-/**
- * Grade component for an enrollment.
- * component could be "midterm", "assignment1", "final" etc.
- */
 public class Grade {
     private Integer gradeId;
     private Integer enrollmentId;
     private String component;
     private Double score;
-    private String finalGrade; // e.g., "A", "B+"
+    private String finalGrade;
    
 
     public Grade() {}
@@ -25,7 +18,7 @@ public class Grade {
         this.enrollmentId = enrollmentId;
     }
 
-    // Getter fucntions
+    //here are Getter fucntions
 
     public Integer getGradeId(){ 
         return gradeId; 
@@ -43,7 +36,7 @@ public class Grade {
         return finalGrade; 
     }
 
-    // Setter functions
+    // here are Setter functions
 
     public void setGradeId(Integer gradeId){
          this.gradeId = gradeId; 
@@ -62,13 +55,8 @@ public class Grade {
     }
     @Override
     public String toString() {
-        return "Grade{" +
-                "gradeId=" + gradeId +
-                ", enrollmentId=" + enrollmentId +
-                ", component='" + component + '\'' +
-                ", score=" + score +
-                ", finalGrade='" + finalGrade + 
-                '}';
+        return ("Grade{" +"gradeId=" + gradeId +", enrollmentId=" + enrollmentId +", component='" + component + '\'' +", score=" + score +", finalGrade='" + finalGrade + '}');
+                
     }
 
     @Override

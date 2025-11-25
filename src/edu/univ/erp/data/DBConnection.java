@@ -8,11 +8,11 @@ public class DBConnection {
 
     // ---------- AUTH DATABASE ----------
     private static final String AUTH_URL =
-            "jdbc:mysql://localhost:3306/erp_auth?serverTimezone=UTC";
+            "jdbc:mysql://localhost:3306/auth_db?serverTimezone=UTC";
 
     // ---------- STUDENT DATABASE ----------
     private static final String STUDENT_URL =
-            "jdbc:mysql://localhost:3306/erp_student?serverTimezone=UTC";
+            "jdbc:mysql://localhost:3306/erp_db?serverTimezone=UTC";
 
     // ---------- MYSQL USERNAME & PASSWORD ----------
     private static final String USER = "root";     // ya 'root'

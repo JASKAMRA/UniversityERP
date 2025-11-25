@@ -129,7 +129,6 @@ public class CourseCatalogPanel extends JPanel {
                     if (list != null) {
                         for (Course c : list) {
                             // Assuming Course object has GetDepartmentID or similar
-                            // Note: Added Department column to tableModel, retrieving Dept ID here
                             String deptId = c.GetDepartmentID() != null ? c.GetDepartmentID() : ""; 
                             tableModel.addRow(new Object[]{c.GetCourseID(), c.GetTitle(), c.GetCredits(), deptId});
                         }

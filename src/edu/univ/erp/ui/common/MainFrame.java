@@ -1,12 +1,12 @@
 package edu.univ.erp.ui.common;
 
+import edu.univ.erp.access.AccessControl;
 import edu.univ.erp.domain.Role;
+
 import edu.univ.erp.service.InstructorService;
 import edu.univ.erp.service.InstructorServiceImpl;
 import edu.univ.erp.service.StudentService;
 import edu.univ.erp.service.StudentServiceImpl;
-import edu.univ.erp.service.AdminService;
-import edu.univ.erp.service.AdminServiceImpl;
 import edu.univ.erp.ui.auth.LoginPanel;
 import edu.univ.erp.ui.admin.*;
 import edu.univ.erp.ui.instructor.InstructorDashboardPanel;
@@ -17,283 +17,255 @@ import edu.univ.erp.ui.util.CurrentUser;
 import javax.swing.*;
 import java.awt.*;
 import java.lang.reflect.Method;
-import java.util.Enumeration;
+
 
 public class MainFrame extends JFrame {
-    private static MainFrame instance;
-    private BannerPanel banner;
-    private NavigationPanel nav;
-    private JPanel contentArea; // CardLayout
 
-    // Service Instances (Dependencies)
-    private final StudentService studentService = new StudentServiceImpl();
-    private final InstructorService instructorService = new InstructorServiceImpl();
-    private final AdminService adminService = new AdminServiceImpl();
+    //declaring the main components ie the frame, the banner , the navigation panel and the panel
+    private static MainFrame Main_instance;
+    private BannerPanel Main_banner;
+    private NavigationPanel navigation;
+    private JPanel DisplayArea; 
 
-    public static final String CARD_LOGIN = "CARD_LOGIN";
-    public static final String CARD_STUDENT_DASH = "STUDENT_DASH";
-    public static final String CARD_INSTR_DASH = "INSTR_DASH";
-    public static final String CARD_ADMIN_DASH = "ADMIN_DASH";
+    //declaring some Service elements for student and instructor
+    private final StudentService Student_Service= new StudentServiceImpl();
+    private final InstructorService Instructor_Service= new InstructorServiceImpl();
+   
 
-    // --- Aesthetic Constants ---
-    private static final int DEFAULT_WIDTH = 1200; // Increased width slightly
-    private static final int DEFAULT_HEIGHT = 780; // Increased height slightly
-    private static final Color FRAME_BACKGROUND = new Color(240, 240, 240); // Light background for separation
+    //declaring cards for dashboards and login card and for rest of the cards we will use lazy method
+    public static final String Card_Instructor_Dashboard = "instructor_dashboard";
+    public static final String Card_Admin_Dashboard = "admin_dashboard";
+    public static final String Card_Login = "Login_Card";
+    public static final String Card_Student_Dashboard = "Student_dashboard";
+   
+    
 
     private MainFrame() {
-        super("🏛️ University ERP System"); // Improved Title
+        super("IIITD ERP System🎓"); 
         initUI();
     }
 
     public static MainFrame getInstance() {
-        if (instance == null) instance = new MainFrame();
-        return instance;
+        if (Main_instance==null){
+            Main_instance=new MainFrame();
+        }
+        return Main_instance;
     }
 
     private void initUI() {
-        // Initialize Core Components
-        banner = new BannerPanel();
-        nav = new NavigationPanel(this);
-        contentArea = new JPanel(new CardLayout());
-        contentArea.setBackground(FRAME_BACKGROUND);
+  
+        Main_banner=new BannerPanel();
+        navigation=new NavigationPanel(this);
+        DisplayArea=new JPanel(new CardLayout());
+        DisplayArea.setBackground(new Color(240, 240, 240));
 
-        // === Register Main Cards ===
-        contentArea.add(new LoginPanel(this), CARD_LOGIN);
-        contentArea.add(new StudentDashboardPanel(studentService), CARD_STUDENT_DASH);
-        // Note: Initial InstructorDashboardPanel is a placeholder/template
-        contentArea.add(new InstructorDashboardPanel(instructorService, null), CARD_INSTR_DASH); 
-        contentArea.add(new AdminDashboardPanel(), CARD_ADMIN_DASH);
+        DisplayArea.add(new LoginPanel(this), Card_Login);
+        DisplayArea.add(new StudentDashboardPanel(Student_Service), Card_Student_Dashboard);
+    
+        DisplayArea.add(new InstructorDashboardPanel(Instructor_Service, null), Card_Instructor_Dashboard); 
+        DisplayArea.add(new AdminDashboardPanel(), Card_Admin_Dashboard);
 
-        // === Register Admin Management Cards ===
-        contentArea.add(new CourseManagementPanel(), "ADMIN_COURSES");
-        contentArea.add(new SectionManagementPanel(), "ADMIN_SECTIONS");
-        contentArea.add(new AssignInstructorPanel(), "ADMIN_ASSIGN");
-        contentArea.add(new BackupRestorePanel(), "ADMIN_BACKUP");
-        contentArea.add(new UserManagementPanel(), "ADMIN_USERS");
+        ;
 
-        // === Frame Layout ===
-        setLayout(new BorderLayout());
-        add(banner, BorderLayout.NORTH);
-        add(nav, BorderLayout.WEST);
-        add(contentArea, BorderLayout.CENTER);
-
-        // === Frame Properties ===
-        setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+   
+        setLayout(new BorderLayout()); // adding a border         
+        add(DisplayArea, BorderLayout.CENTER);   // adding main components into the border
+        add(Main_banner, BorderLayout.NORTH);
+        add(navigation, BorderLayout.WEST);
+        setSize(1200, 700); //settings its size
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        
 
-        showCard(CARD_LOGIN);
+        // now we have to show login card whenever we start the application
+        Show_any_Card(Card_Login);
     }
 
-    public void showCard(String name) {
-        CardLayout cl = (CardLayout) contentArea.getLayout();
-        cl.show(contentArea, name);
+    
+    public void Show_any_Card(String Card_name) {                             //this is for showing of custom cards
+        CardLayout Card1=(CardLayout) DisplayArea.getLayout();
+        Card1.show(DisplayArea,Card_name);
         
-        // Attempt to call loadData if the panel supports it (useful for refreshing tables)
-        Component currentCard = null;
-        for (Component comp : contentArea.getComponents()) {
-            if (comp.isVisible()) {
-                currentCard = comp;
+        Component current_card=null;
+        for (Component c:DisplayArea.getComponents()){
+            if (c.isVisible()==true){
+                current_card=c;
                 break;
             }
         }
-        
-        if (currentCard != null) {
+        if (current_card!=null) {
             try {
-                // Use reflection to call loadData on the newly visible panel
-                Method m = currentCard.getClass().getMethod("loadData");
-                m.invoke(currentCard);
+                Method method_Load=current_card.getClass().getMethod("loadData");
+                method_Load.invoke(current_card);
             } catch (NoSuchMethodException ignored) {
-                // Method does not exist, which is fine for most panels
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
     }
 
-    public void showForUser(CurrentUser user) {
-        // --- 1. Maintenance Check (Always first) ---
-        boolean maintenance = false;
-        try {
-            maintenance = adminService.isMaintenanceOn();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            maintenance = CurrentSession.get() != null && CurrentSession.get().isMaintenance();
+    public void show_to_user(CurrentUser user) {
+        //stating mantenance false by default
+        boolean maintenance=false;
+        maintenance=AccessControl.isMaintenanceOn();
+        CurrentSession.get().SetMantanence(maintenance);
+        Main_banner.SetMantanence(maintenance);
+
+        navigation.LoadMenu_forRole(user.getRole());
+        Role userRole=user.getRole();
+
+        if (userRole==Role.INSTRUCTOR) {
+            restartDashboard_Instructor(user);
         }
-        CurrentSession.get().setMaintenance(maintenance);
-        banner.setMaintenance(maintenance);
-
-        // --- 2. Navigation Update ---
-        nav.loadMenuForRole(user.getRole());
-        
-        // --- 3. Route to Dashboard and Setup Role-Specific Panels ---
-        Role userRole = user.getRole();
-
-        if (userRole == Role.STUDENT) {
-            // Setup dynamic Student cards if they don't exist
+        else if (userRole==Role.STUDENT) {
             ensureStudentCardsExist(user.getUserId());
-            
-            StudentDashboardPanel dash = getPanel(StudentDashboardPanel.class, CARD_STUDENT_DASH);
-            if (dash != null) dash.loadData(user.getProfile());
-            showCard(CARD_STUDENT_DASH);
-
-        } else if (userRole == Role.INSTRUCTOR) {
-            // Refresh Instructor Dashboard (since it's user-specific)
-            refreshInstructorDashboard(user);
-
-        } else if (userRole == Role.ADMIN) {
-            AdminDashboardPanel p = getPanel(AdminDashboardPanel.class, CARD_ADMIN_DASH);
-            if (p != null) p.loadData();
-            showCard(CARD_ADMIN_DASH);
-        } else {
-            showCard(CARD_LOGIN);
-        }
-    }
-    
-    /**
-     * Instantiates necessary student panels if they haven't been added yet.
-     */
-    private void ensureStudentCardsExist(String userId) {
-        if (getPanel(MyRegistrationsPanel.class, "STUDENT_REGS") == null) {
-            MyRegistrationsPanel regs = new MyRegistrationsPanel(studentService, userId);
-            contentArea.add(regs, "STUDENT_REGS");
-        }
-        if (getPanel(TimetablePanel.class, "STUDENT_TIMETABLE") == null) {
-            TimetablePanel tt = new TimetablePanel(studentService, userId);
-            contentArea.add(tt, "STUDENT_TIMETABLE");
-        }
-        if (getPanel(GradesPanel.class, "STUDENT_GRADES") == null) {
-            GradesPanel gp = new GradesPanel(studentService, userId);
-            contentArea.add(gp, "STUDENT_GRADES");
-        }
-        if (getPanel(TranscriptPanel.class, "STUDENT_TRANSCRIPT") == null) {
-            TranscriptPanel tp = new TranscriptPanel(studentService, userId);
-            contentArea.add(tp, "STUDENT_TRANSCRIPT");
-        }
-    }
-    
-    /**
-     * Recreates the Instructor Dashboard as it relies on the current user's ID.
-     * FIX: Simplified logic to avoid calling .elements() on an int.
-     */
-    private void refreshInstructorDashboard(CurrentUser user) {
-        // Find existing dash panel by component type and remove it
-        for (Component c : contentArea.getComponents()) {
-            if (c instanceof InstructorDashboardPanel) {
-                contentArea.remove(c);
-                break; // Assuming only one dash panel of this type exists
+            //first we check that if students cards exist or not
+            //then we add the dashboard of the student 
+            StudentDashboardPanel dashboard=getPanel(StudentDashboardPanel.class, Card_Student_Dashboard);
+            if (dashboard!=null){
+                dashboard.loadData(user.getProfile());
             }
+            Show_any_Card(Card_Student_Dashboard);
+        } else if(userRole==Role.ADMIN){
+            ensureAdminCardsExist(user.getUserId());
+            //first we check that if admin exist or not
+            //then we add the dashboard of the student 
+            AdminDashboardPanel Dashboard=getPanel(AdminDashboardPanel.class,Card_Admin_Dashboard);
+            if (Dashboard!=null){
+                Dashboard.LoadData();
+            }
+            Show_any_Card(Card_Admin_Dashboard);
+        } else {
+            Show_any_Card(Card_Login);
+        }
+    }
+
+    //for ensuring studentscards
+    private void ensureStudentCardsExist(String userId) {
+        Remove_Panel(TranscriptPanel.class);
+        Remove_Panel(GradesPanel.class);
+        Remove_Panel(MyRegistrationsPanel.class);
+        Remove_Panel(CourseCatalogPanel.class);
+        Remove_Panel(TimetablePanel.class);
+        if (getPanel(MyRegistrationsPanel.class, "Student_registration")== null) {
+            DisplayArea.add(new MyRegistrationsPanel(Student_Service, userId), "Student_registration");
+        }
+         if (getPanel(CourseCatalogPanel.class, "STUDENT_CATALOG")== null) {
+            DisplayArea.add(new CourseCatalogPanel(Student_Service, userId), "STUDENT_CATALOG");
+        }
+        if (getPanel(TimetablePanel.class, "STUDENT_TIMETABLE")== null) {
+            DisplayArea.add(new TimetablePanel(Student_Service, userId), "STUDENT_TIMETABLE");
         }
         
-        InstructorDashboardPanel dash = new InstructorDashboardPanel(instructorService, user.getUserId());
-        String displayName = (user.getProfile() != null && user.getProfile().getName() != null)
-            ? user.getProfile().getName() : user.getUserId();
-            
-        dash.loadData(user.getUserId(), displayName);
-        
-        // Re-add using the standard card name
-        contentArea.add(dash, CARD_INSTR_DASH);
+        if (getPanel(TranscriptPanel.class, "STUDENT_TRANSCRIPT")== null) {
+            DisplayArea.add(new TranscriptPanel(Student_Service, userId), "STUDENT_TRANSCRIPT");
+        }
+         if (getPanel(GradesPanel.class, "STUDENT_GRADES")== null) {
+            DisplayArea.add(new GradesPanel(Student_Service, userId), "STUDENT_GRADES");
+  
+}
+    }
+
+// for ensuring admin cards
+    private void ensureAdminCardsExist(String userId){
+        if (getPanel(CourseManagementPanel.class, "Admin_Management")== null) {
+            DisplayArea.add(new CourseManagementPanel(), "Admin_Management");
+        }
+        if (getPanel(SectionManagementPanel.class, "Admin_Section_mng")== null) {
+            DisplayArea.add(new SectionManagementPanel(), "Admin_Section_mng");
+        }
+        if (getPanel(AssignInstructorPanel.class, "Admin_instructor")== null) {
+            DisplayArea.add(new AssignInstructorPanel(), "Admin_instructor");
+        }
+        if (getPanel(BackupRestorePanel.class, "Admin_Backup")== null) {
+            DisplayArea.add(new BackupRestorePanel(), "Admin_Backup");
+        }
+        if (getPanel(UserManagementPanel.class, "Admin_User_Management")== null) {
+            DisplayArea.add(new UserManagementPanel(), "Admin_User_Management");
+        }
+    };
+
+    private void restartDashboard_Instructor(CurrentUser user) {
+        for (Component c:DisplayArea.getComponents()) {
+            if (c instanceof InstructorDashboardPanel){
+                DisplayArea.remove(c);
+                break; 
+            } } 
+        InstructorDashboardPanel instructor_dashboard = new InstructorDashboardPanel(Instructor_Service, user.getUserId());
+        String name_to_displayed;
+        if (user.getProfile()==null||user.getProfile().getName()== null) {
+            name_to_displayed=user.getUserId();     
+        } else {
+            name_to_displayed=user.getProfile().getName(); 
+        }
+        instructor_dashboard.loadData(user.getUserId(),name_to_displayed);
+        DisplayArea.add(instructor_dashboard, Card_Instructor_Dashboard);
         revalidate();
         repaint();
-        showCard(CARD_INSTR_DASH);
+        Show_any_Card(Card_Instructor_Dashboard);
     }
-
-    public void showStudentCatalog() {
-        StudentDashboardPanel p = getPanel(StudentDashboardPanel.class, CARD_STUDENT_DASH);
-        if (p == null) { showCard(CARD_STUDENT_DASH); return; }
-        
-        // Simplified reflection block (Logic Unchanged)
-        try {
-            Method m = p.getClass().getMethod("showCatalog");
-            m.invoke(p);
-        } catch (Exception ex) {
-            // Fallback attempts
-            try {
-                Method m2 = p.getClass().getMethod("openCatalog");
-                m2.invoke(p);
-            } catch (Exception ignored) {
-                // Last resort private reflection attempt
-                try {
-                    Method dm = p.getClass().getDeclaredMethod("showCatalog");
-                    dm.setAccessible(true);
-                    dm.invoke(p);
-                } catch (Exception e) {
-                    System.err.println("Failed to open student catalog using reflection.");
-                    e.printStackTrace();
-                }
-            }
-        }
-        showCard(CARD_STUDENT_DASH);
-    }
-
-    public void showInstructorDashboard() {
-        CurrentUser cu = CurrentSession.get().getUser();
-        if (cu == null || cu.getRole() != Role.INSTRUCTOR) {
-            JOptionPane.showMessageDialog(this, "Instructor not logged in.", "Error", JOptionPane.ERROR_MESSAGE);
-            showCard(CARD_LOGIN);
+    public void showInstDashboard() {
+        CurrentUser current_user = CurrentSession.get().getUser();
+        if (current_user==null||current_user.getRole()!=Role.INSTRUCTOR) {
+            JOptionPane.showMessageDialog(this, "Instructo was not logged in", "ERROR", JOptionPane.ERROR_MESSAGE);
+            Show_any_Card(Card_Login);
             return;
         }
-        refreshInstructorDashboard(cu);
+        restartDashboard_Instructor(current_user);
     }
 
-    public void showInstructorSections() {
-        showInstructorDashboard(); // Ensure dashboard is loaded/refreshed
-        InstructorDashboardPanel dash = getPanel(InstructorDashboardPanel.class, CARD_INSTR_DASH);
-        if (dash != null) dash.showSections();
+    public void ShowInstforSections() {
+        InstructorDashboardPanel dash =getPanel(InstructorDashboardPanel.class,Card_Instructor_Dashboard);
+        if (dash != null){
+        dash.showSections();
+        }
     }
 
     public void enableInstructorActions() {
-        CurrentUser cu = CurrentSession.get().getUser();
-        if (cu == null || cu.getRole() != Role.INSTRUCTOR) {
-            JOptionPane.showMessageDialog(this, "Instructor not logged in.", "Error", JOptionPane.ERROR_MESSAGE);
+        CurrentUser current_user = CurrentSession.get().getUser();
+        if (current_user == null||current_user.getRole()!=Role.INSTRUCTOR) {
+            JOptionPane.showMessageDialog(this, "Instructor was not logged in ", "ERROR", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        InstructorDashboardPanel dash = getPanel(InstructorDashboardPanel.class, CARD_INSTR_DASH);
-        if (dash == null) {
-            showInstructorDashboard();
-            dash = getPanel(InstructorDashboardPanel.class, CARD_INSTR_DASH);
-        }
-        if (dash != null) {
+        InstructorDashboardPanel dash = getPanel(InstructorDashboardPanel.class, Card_Instructor_Dashboard);
+        if (dash==null) {
+            showInstDashboard();
+            dash =getPanel(InstructorDashboardPanel.class,Card_Instructor_Dashboard);
+        }else{
             dash.enableActions();
-            showCard(CARD_INSTR_DASH);
+            Show_any_Card(Card_Instructor_Dashboard);
         }
     }
+    private void Remove_Panel(Class<? extends JPanel> clas) {
+    for (Component Component : DisplayArea.getComponents()) {
+        if (clas.isInstance(Component)) {
+            DisplayArea.remove(Component);
+            break;
+        }
+    }
+}
 
     @SuppressWarnings("unchecked")
-    private <T extends JPanel> T getPanel(Class<T> cls, String cardName) {
-        for (Component c : contentArea.getComponents()) {
-            if (cls.isInstance(c)) return (T) c;
+    private <T extends JPanel> T getPanel(Class<T> class_searched, String cardName) {
+        for (Component c :DisplayArea.getComponents()) {
+            if (class_searched.isInstance(c)){
+                return((T) c);
+            }
         }
         return null;
     }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try { 
-                // Use a modern look and feel if available, otherwise fallback
-                String lf = UIManager.getSystemLookAndFeelClassName();
-                for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                    if ("Nimbus".equals(info.getName())) {
-                        lf = info.getClassName();
-                        break;
-                    }
-                }
-                UIManager.setLookAndFeel(lf);
-            } catch (Exception ignored) {}
-            
-            MainFrame m = MainFrame.getInstance();
-            m.setVisible(true);
-        });
-    }
-    
-    /**
-     * Sets the maintenance flag on the banner and in the session.
-     */
-    public void setBannerMaintenance(boolean on) {
-        if (banner != null) banner.setMaintenance(on);
+     public void togglemantainenceON(boolean on) {
+        if (Main_banner != null){
+            Main_banner.SetMantanence(on);
+        }
         if (CurrentSession.get() != null) {
-            CurrentSession.get().setMaintenance(on);
+            CurrentSession.get().SetMantanence(on);
         }
     }
+
+    public static void main(String[] args) {            
+            MainFrame m = MainFrame.getInstance();
+            m.setVisible(true);
+        };
 }

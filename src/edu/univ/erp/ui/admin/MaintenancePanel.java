@@ -96,11 +96,11 @@ public class MaintenancePanel extends JPanel {
     
             if (ok) {
                 // Update session + banner with NEW state
-                CurrentSession.get().setMaintenance(newState);
+                CurrentSession.get().SetMantanence(newState);
                 // Note: MainFrame.getInstance() is checked externally in AdminDashboardPanel, 
                 // but we keep the call here if it is needed internally by this panel's use case.
                 if (MainFrame.getInstance() != null) {
-                    MainFrame.getInstance().setBannerMaintenance(newState);
+                    MainFrame.getInstance().togglemantainenceON(newState);
                 }
 
                 JOptionPane.showMessageDialog(this,

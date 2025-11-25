@@ -6,7 +6,6 @@ import edu.univ.erp.domain.Student;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class StudentDAO {
 
@@ -20,7 +19,7 @@ public class StudentDAO {
             ps.setString(1, s.GetID());              // domain GetID() => user_id
             ps.setString(2, s.GetRollNum());         // roll_num
             ps.setString(3, s.GetName());            // name
-            ps.setString(4, s.GetEmail());           // you kept email field in domain as email_id
+            ps.setString(4, s.GetEmail());           // you kept email field in domain as email_id (mapped here to mobile column)
             ps.setInt(5, s.GetYear());               // year
             ps.setString(6, s.GetProgram());         // program
 
@@ -45,7 +44,8 @@ public class StudentDAO {
     }
 
     // Find by PK student_id (int). Maps to domain by setting student_id String.
-    public Optional<Student> findById(int studentId) {
+    // Returns Student or null if not found
+    public Student findById(int studentId) {
         String sql = "SELECT student_id, user_id, roll_no, name, mobile, year, program FROM students WHERE student_id = ?";
         try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -54,17 +54,17 @@ public class StudentDAO {
                 if (rs.next()) {
                     Student s = mapRowToStudent(rs);
                     s.SetStudentID(String.valueOf(rs.getInt("student_id")));
-                    return Optional.of(s);
+                    return s;
                 }
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return Optional.empty();
+        return null;
     }
 
-    // Find by user_id (String)
-    public Optional<Student> findByUserId(String userId) {
+    // Find by user_id (String). Returns Student or null if not found
+    public Student findByUserId(String userId) {
         String sql = "SELECT student_id, user_id, roll_no, name, mobile, year, program FROM students WHERE user_id = ?";
         try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -73,13 +73,13 @@ public class StudentDAO {
                 if (rs.next()) {
                     Student s = mapRowToStudent(rs);
                     s.SetStudentID(String.valueOf(rs.getInt("student_id")));
-                    return Optional.of(s);
+                    return s;
                 }
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return Optional.empty();
+        return null;
     }
 
     // Update by PK (student_id). Domain stores student_id as String so convert to int.
@@ -159,8 +159,7 @@ public class StudentDAO {
         s.SetID(rs.getString("user_id"));         // domain SetID -> user_id
         s.SetRollNum(rs.getString("roll_no"));   // Roll_num
         s.SetName(rs.getString("name"));          // name
-        s.SetEmail(rs.getString("mobile"));       // WARNING: your domain uses email_id, DB column mobile -> you earlier listed mobile; adjust if domain expects email_id
-        // I assigned mobile into email field because domain has email_id; if you want separate mobile field in domain, update domain accordingly.
+        s.SetEmail(rs.getString("mobile"));       // WARNING: your domain uses email_id, DB column mobile -> adjust domain if needed
         s.SetYear(rs.getInt("year"));
         s.SetProgram(rs.getString("program"));
         return s;

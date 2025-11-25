@@ -7,39 +7,30 @@ import java.awt.*;
 public class BannerPanel extends JPanel {
     private JLabel label;
 
-    // --- Aesthetic constants ---
-    private static final Font BANNER_FONT = new Font("Arial", Font.BOLD, 14);
-    private static final Color DEFAULT_BG = new Color(220, 220, 220); // Slightly darker gray
-    private static final Color MAINTENANCE_BG = new Color(180, 0, 0); // Darker Red
-    private static final Color MAINTENANCE_FG = Color.YELLOW; // High contrast for warning
-
     public BannerPanel() {
         setLayout(new BorderLayout());
-        
-        // Ensure the panel itself has minimal height if no message is showing
         setPreferredSize(new Dimension(1, 30)); 
-
-        label = new JLabel(" ");
-        label.setOpaque(true);
-        label.setFont(BANNER_FONT);
-        label.setBorder(new EmptyBorder(5, 10, 5, 10)); // Add padding
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        
+        label = new JLabel(" "); //any text label
+        label.setFont(new Font("Arial", Font.BOLD, 14));  //changing the font
+        label.setOpaque(true); //adding opacity
+        label.setHorizontalAlignment(SwingConstants.CENTER);// adding allignment
+        label.setBorder(new EmptyBorder(5, 10, 5, 10)); //addnig border
         add(label, BorderLayout.CENTER);
-        setMaintenance(false); // Set initial state
+        SetMantanence(false); // Set initial state
     }
 
-    public void setMaintenance(boolean on) {
-        if (on) {
-            label.setText("⚠️ SYSTEM MAINTENANCE MODE: WRITE OPERATIONS DISABLED ⚠️");
-            label.setBackground(MAINTENANCE_BG);
-            label.setForeground(MAINTENANCE_FG);
-        } else {
+    public void SetMantanence(boolean on) {
+        //if mantanence is ON then we have show the messages otherwise we dont have to show
+        if (!on) {
             label.setText(" ");
-            label.setBackground(DEFAULT_BG);
+            label.setBackground(new Color(220, 220, 220));
             label.setForeground(Color.BLACK);
+            ;
+        } else {
+            label.setText("⚠️Caution--- Sytem is under Maintenance Mode, You cannot do any Write operations!");
+            label.setBackground(new Color(180, 0, 0));
+            label.setForeground(Color.YELLOW); 
         }
-        // Force height update if maintenance banner is shown/hidden
         revalidate(); 
         repaint();
     }

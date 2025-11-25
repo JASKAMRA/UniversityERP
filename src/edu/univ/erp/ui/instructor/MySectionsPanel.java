@@ -68,6 +68,15 @@ public class MySectionsPanel extends JPanel {
 
         topBar.add(toggleMyOnly);
         topBar.add(btnRefresh);
+        // after btnRefresh and toggleMyOnly are created
+        JButton btnOpenGrades = new JButton("📘 Open Grades");
+        btnOpenGrades.setBackground(new Color(200,220,255));
+        btnOpenGrades.setFocusPainted(false);
+        topBar.add(btnOpenGrades);
+
+        // wire action
+        btnOpenGrades.addActionListener(e -> openGradebookForSelectedSection());
+
         
         // Add a titled panel wrapper for controls
         JPanel controlsWrapper = new JPanel(new BorderLayout());
@@ -111,6 +120,32 @@ public class MySectionsPanel extends JPanel {
      * - if toggleMyOnly is selected -> instructorService.getAssignedSections(currentUserId)
      * - else -> instructorService.getAllSections() (fallbacks to assigned if not implemented)
      */
+    private void openGradebookForSelectedSection() {
+    Integer sid = getSelectedSectionId();
+    if (sid == null) {
+        JOptionPane.showMessageDialog(this, "Select a section first.", "No selection", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+
+    // you may have course title in the table; try to read it
+    int sel = table.getSelectedRow();
+    String courseTitle = "";
+        try {
+            Object ct = model.getValueAt(sel, 2); // 2 = Course Title column in your model
+            courseTitle = ct == null ? "" : ct.toString();
+        } catch (Exception ignored) {}
+
+        // Create GradebookPanel and show in modal dialog
+        GradebookPanel gb = new GradebookPanel(instructorService, sid, courseTitle, currentUserId);
+        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Gradebook - Section " + sid, Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.getContentPane().setLayout(new BorderLayout());
+        dlg.getContentPane().add(gb, BorderLayout.CENTER);
+        dlg.pack();
+        dlg.setSize(1000, 600);
+        dlg.setLocationRelativeTo(this);
+        dlg.setVisible(true);
+    }
+
     public void loadSections() {
         SwingUtilities.invokeLater(() -> {
             model.setRowCount(0);

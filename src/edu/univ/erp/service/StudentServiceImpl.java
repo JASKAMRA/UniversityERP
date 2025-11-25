@@ -12,7 +12,6 @@ import edu.univ.erp.domain.Enrollment;
 import edu.univ.erp.domain.Section;
 import edu.univ.erp.domain.Student;
 
-
 import edu.univ.erp.ui.util.CurrentSession;
 import edu.univ.erp.domain.Role;
 
@@ -31,6 +30,18 @@ public class StudentServiceImpl implements StudentService {
     private final SectionDao sectionDao = new SectionDao();
     private final EnrollmentDao enrollmentDao = new EnrollmentDao();
     private final StudentDAO studentDao = new StudentDAO();
+
+    // mapping day name -> order index for sorting timetable
+    private static final Map<String, Integer> DAY_ORDER = new HashMap<>();
+    static {
+        DAY_ORDER.put("MONDAY", 1);
+        DAY_ORDER.put("TUESDAY", 2);
+        DAY_ORDER.put("WEDNESDAY", 3);
+        DAY_ORDER.put("THURSDAY", 4);
+        DAY_ORDER.put("FRIDAY", 5);
+        DAY_ORDER.put("SATURDAY", 6);
+        DAY_ORDER.put("SUNDAY", 7);
+    }
 
     // ------------------------------------------------------
     // COURSE CATALOG
@@ -58,12 +69,12 @@ public class StudentServiceImpl implements StudentService {
         }
 
         // resolve user -> student_id
-        Optional<Student> stOpt = studentDao.findByUserId(userId);
-        if (!stOpt.isPresent()) {
+        Student st = studentDao.findByUserId(userId);
+        if (st == null) {
             System.err.println("[register] no student profile for userId=" + userId);
             return false;
         }
-        String studentId = stOpt.get().GetStudentID();
+        String studentId = st.GetStudentID();
 
         // transactional register with row lock to prevent oversubscribe
         try (Connection conn = DBConnection.getStudentConnection()) {
@@ -83,6 +94,7 @@ public class StudentServiceImpl implements StudentService {
                             return false;
                         }
                         capacity = rs.getInt("capacity");
+                        if (rs.wasNull()) capacity = null;
                         regDeadline = rs.getTimestamp("registration_deadline");
                     }
                 }
@@ -158,10 +170,10 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public List<Object[]> getMyRegistrations(String userId) throws Exception {
 
-        Optional<Student> stOpt = studentDao.findByUserId(userId);
-        if (!stOpt.isPresent()) return Collections.emptyList();
+        Student st = studentDao.findByUserId(userId);
+        if (st == null) return Collections.emptyList();
 
-        String studentId = stOpt.get().GetStudentID();
+        String studentId = st.GetStudentID();
 
         List<Enrollment> enrollments = enrollmentDao.findByStudent(studentId);
         if (enrollments == null || enrollments.isEmpty()) return Collections.emptyList();
@@ -174,11 +186,25 @@ public class StudentServiceImpl implements StudentService {
             Course c = courseDao.findById(sec.GetCourseID());
             String courseId = (c != null) ? c.GetCourseID() : sec.GetCourseID();
 
+            // Use the new 'days' CSV field (instead of single day enum)
+            String daysCsv = null;
+            try {
+                daysCsv = sec.GetDays();
+            } catch (Exception ex) {
+                // fallback: if old API GetDay exists, use it
+                try {
+                    daysCsv = sec.GetDay() == null ? "" : sec.GetDay().name();
+                } catch (Exception ignore) {
+                    daysCsv = "";
+                }
+            }
+            if (daysCsv == null) daysCsv = "";
+
             rows.add(new Object[]{
                     e.GetEnrollmentID(),
                     courseId,
                     sec.GetSectionID(),
-                    sec.GetDay() == null ? "" : sec.GetDay().name(),
+                    daysCsv,
                     sec.GetSemester(),
                     e.GetStatus() == null ? "" : e.GetStatus().name()
             });
@@ -205,10 +231,10 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public List<Section> getTimetable(String userId) throws Exception {
 
-        Optional<Student> stOpt = studentDao.findByUserId(userId);
-        if (!stOpt.isPresent()) return Collections.emptyList();
+        Student st = studentDao.findByUserId(userId);
+        if (st == null) return Collections.emptyList();
 
-        String studentId = stOpt.get().GetStudentID();
+        String studentId = st.GetStudentID();
         List<Enrollment> enrolls = enrollmentDao.findByStudent(studentId);
         if (enrolls == null || enrolls.isEmpty()) return Collections.emptyList();
 
@@ -218,10 +244,35 @@ public class StudentServiceImpl implements StudentService {
             if (s != null) out.add(s);
         }
 
-        out.sort(Comparator.comparing((Section s) -> s.GetDay() == null ? "" : s.GetDay().name())
-                .thenComparingInt(Section::GetSectionID));
+        // Sort by: first day index (from days CSV) then start_time (HH:mm lexicographic)
+        out.sort((a, b) -> {
+            String aDays = safeString(a.GetDays());
+            String bDays = safeString(b.GetDays());
+
+            String aFirst = firstDayFromCsv(aDays);
+            String bFirst = firstDayFromCsv(bDays);
+
+            int ai = DAY_ORDER.getOrDefault(aFirst.toUpperCase(), 999);
+            int bi = DAY_ORDER.getOrDefault(bFirst.toUpperCase(), 999);
+            if (ai != bi) return Integer.compare(ai, bi);
+
+            String aStart = safeString(a.GetStartTime());
+            String bStart = safeString(b.GetStartTime());
+            return aStart.compareTo(bStart);
+        });
 
         return out;
+    }
+
+    private static String safeString(String s) {
+        return s == null ? "" : s;
+    }
+
+    private static String firstDayFromCsv(String csv) {
+        if (csv == null) return "";
+        String[] parts = csv.split(",");
+        if (parts.length == 0) return "";
+        return parts[0].trim().toUpperCase();
     }
 
     @Override
@@ -294,10 +345,10 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public List<Object[]> getGrades(String userId) throws Exception {
 
-        Optional<Student> stOpt = studentDao.findByUserId(userId);
-        if (!stOpt.isPresent()) return Collections.emptyList();
+        Student st = studentDao.findByUserId(userId);
+        if (st == null) return Collections.emptyList();
 
-        String studentId = stOpt.get().GetStudentID();
+        String studentId = st.GetStudentID();
         List<Enrollment> enrolls = enrollmentDao.findByStudent(studentId);
 
         if (enrolls == null || enrolls.isEmpty()) return Collections.emptyList();
@@ -344,42 +395,41 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-public String getInstructorNameForSection(Section section) throws Exception {
-    if (section == null) return "";
+    public String getInstructorNameForSection(Section section) throws Exception {
+        if (section == null) return "";
 
-    String instrVal = section.GetInstructorID();
-    if (instrVal == null || instrVal.trim().isEmpty()) return "";
+        String instrVal = section.GetInstructorID();
+        if (instrVal == null || instrVal.trim().isEmpty()) return "";
 
-    try (Connection conn = DBConnection.getStudentConnection()) {
+        try (Connection conn = DBConnection.getStudentConnection()) {
 
-        // Try numeric instructor_id (INT)
-        try {
-            int iid = Integer.parseInt(instrVal);
-            String q = "SELECT name FROM instructors WHERE instructor_id = ?";
-            try (PreparedStatement ps = conn.prepareStatement(q)) {
-                ps.setInt(1, iid);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) return rs.getString("name");
+            // Try numeric instructor_id (INT)
+            try {
+                int iid = Integer.parseInt(instrVal);
+                String q = "SELECT name FROM instructors WHERE instructor_id = ?";
+                try (PreparedStatement ps = conn.prepareStatement(q)) {
+                    ps.setInt(1, iid);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) return rs.getString("name");
+                    }
+                }
+            } catch (NumberFormatException nfe) {
+                // Fallback → user_id (VARCHAR)
+                String q2 = "SELECT name FROM instructors WHERE user_id = ?";
+                try (PreparedStatement ps2 = conn.prepareStatement(q2)) {
+                    ps2.setString(1, instrVal);
+                    try (ResultSet rs2 = ps2.executeQuery()) {
+                        if (rs2.next()) return rs2.getString("name");
+                    }
                 }
             }
-        } catch (NumberFormatException nfe) {
-            // Fallback → user_id (VARCHAR)
-            String q2 = "SELECT name FROM instructors WHERE user_id = ?";
-            try (PreparedStatement ps2 = conn.prepareStatement(q2)) {
-                ps2.setString(1, instrVal);
-                try (ResultSet rs2 = ps2.executeQuery()) {
-                    if (rs2.next()) return rs2.getString("name");
-                }
-            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return "";
         }
 
-    } catch (SQLException ex) {
-        ex.printStackTrace();
         return "";
     }
-
-    return "";
-}
-
 
 }

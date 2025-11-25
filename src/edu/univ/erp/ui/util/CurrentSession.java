@@ -9,6 +9,6 @@ public class CurrentSession {
     public static CurrentSession get(){ return instance; }
     public void setUser(CurrentUser u){ this.user = u;}
     public CurrentUser getUser(){ return user;}
-    public void setMaintenance(boolean m){ this.maintenance = m; }
+    public void SetMantanence(boolean m){ this.maintenance = m; }
     public boolean isMaintenance(){ return maintenance; }
 }

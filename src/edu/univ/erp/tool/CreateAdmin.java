@@ -68,9 +68,9 @@ public class CreateAdmin {
 
             // 2) Insert profile into erp_student.admins
             Admin admin = new Admin();
-            admin.setUserId(userId);
-            admin.setName(fullName);
-            admin.setEmail(email);
+            admin.SetUserId(userId);
+            admin.SetName(fullName);
+            admin.SetEmail(email);
 
             AdminDao dao = new AdminDao();
             boolean ok = dao.insert(admin);
@@ -80,14 +80,14 @@ public class CreateAdmin {
                 return;
             }
 
-            System.out.println("✔ Inserted into admins table (admin_id = " + admin.getAdminId() + ")");
+            System.out.println("✔ Inserted into admins table (admin_id = " + admin.GetAdminId() + ")");
 
             System.out.println("\n=== ADMIN CREATED SUCCESSFULLY ===");
             System.out.println("Login Username : " + username);
             System.out.println("Login Password : " + password + "  (hashed internally)");
             System.out.println("Role           : ADMIN");
             System.out.println("user_id        : " + userId);
-            System.out.println("admin_id       : " + admin.getAdminId());
+            System.out.println("admin_id       : " + admin.GetAdminId());
             System.out.println("====================================");
 
         } catch (Exception ex) {

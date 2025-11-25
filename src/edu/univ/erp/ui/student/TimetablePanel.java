@@ -4,123 +4,167 @@ import edu.univ.erp.domain.Section;
 import edu.univ.erp.service.StudentService;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
+/**
+ * Very simple timetable: columns = days, each cell lists registered courses for that day
+ * with their start-end times and section id.
+ */
 public class TimetablePanel extends JPanel {
-
     private final StudentService studentService;
     private final String userId;
 
-    private final DefaultTableModel model;
-    private final JTable table;
-    private final JButton refreshBtn;
+    private final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
 
-    // --- Aesthetic constants ---
-    private static final int PADDING = 15;
-    private static final int GAP = 10;
-    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 20);
-    private static final Color PRIMARY_COLOR = new Color(0, 102, 204); // Deep Blue
+    private JTable table;
+    private DefaultTableModel model;
+    private JButton btnRefresh;
 
-    public TimetablePanel(StudentService service, String userId) {
-        this.studentService = service;
+    private final List<String> DAYS = Arrays.asList(
+            "MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"
+    );
+
+    public TimetablePanel(StudentService studentService, String userId) {
+        this.studentService = studentService;
         this.userId = userId;
-        
-        // 1. Overall Layout & Padding
-        setLayout(new BorderLayout(GAP, GAP));
-        setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
-        setBackground(Color.WHITE);
-
-        // 2. Title (North)
-        JLabel title = new JLabel("⏰ My Current Timetable");
-        title.setFont(TITLE_FONT);
-        title.setForeground(PRIMARY_COLOR);
-        title.setBorder(new EmptyBorder(0, 0, GAP, 0));
-        add(title, BorderLayout.NORTH);
-
-        // 3. Table Setup (Center)
-        model = new DefaultTableModel(new Object[] {"Course","Section","Day","Semester","Year"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-            // Ensure Section and Year columns are treated as Integer/Number
-            @Override public Class<?> getColumnClass(int columnIndex) {
-                if (columnIndex == 1 || columnIndex == 4) return Integer.class;
-                return String.class;
-            }
-        };
-
-        table = new JTable(model);
-        table.setRowHeight(25);
-        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
-        
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
-        add(scrollPane, BorderLayout.CENTER);
-
-        // 4. Buttons (South)
-        JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT, GAP, 0));
-        south.setBackground(Color.WHITE);
-        
-        refreshBtn = new JButton("🔄 Refresh Timetable");
-        
-        // Style Button
-        refreshBtn.setFocusPainted(false);
-        refreshBtn.setBackground(Color.LIGHT_GRAY);
-        refreshBtn.setPreferredSize(new Dimension(160, 30));
-        
-        south.add(refreshBtn);
-        add(south, BorderLayout.SOUTH);
-
-        // 5. Actions
-        refreshBtn.addActionListener(e -> loadTimetable());
-
-        // initial load
+        initUI();
         loadTimetable();
     }
 
-    private void loadTimetable() {
-        model.setRowCount(0);
-        refreshBtn.setEnabled(false);
-        // Show loading message
-        model.addRow(new Object[]{"Loading...", "", "", "", ""});
-        
-        SwingWorker<List<Section>, Void> w = new SwingWorker<>() {
-            @Override
-            protected List<Section> doInBackground() throws Exception {
-                return studentService.getTimetable(userId);
-            }
+    private void initUI() {
+        setLayout(new BorderLayout(6,6));
+        JPanel top = new JPanel(new BorderLayout());
+        JLabel title = new JLabel("Weekly Timetable", SwingConstants.LEFT);
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 14f));
+        top.add(title, BorderLayout.WEST);
 
-            @Override
-            protected void done() {
-                model.setRowCount(0); // Clear loading row
-                
-                try {
-                    List<Section> list = get();
-                    if (list != null) {
-                        for (Section s : list) {
-                            // Safely retrieve data from Section object
-                            String courseId = s.GetCourseID();
-                            Integer secId = s.GetSectionID();
-                            String day = s.GetDay() == null ? "" : s.GetDay().name();
-                            String sem = s.GetSemester() == null ? "" : s.GetSemester();
-                            Integer year = s.GetYear();
-                            
-                            model.addRow(new Object[] { courseId, secId, day, sem, year });
-                        }
-                    } else {
-                        JOptionPane.showMessageDialog(TimetablePanel.this, "No sections found in your timetable.", "Info", JOptionPane.INFORMATION_MESSAGE);
+        btnRefresh = new JButton("Refresh");
+        btnRefresh.addActionListener(e -> loadTimetable());
+        top.add(btnRefresh, BorderLayout.EAST);
+
+        add(top, BorderLayout.NORTH);
+
+        model = new DefaultTableModel();
+        table = new JTable(model);
+        table.setRowHeight(120); // enough for multiple lines
+        table.setEnabled(false);
+        add(new JScrollPane(table), BorderLayout.CENTER);
+    }
+
+    /**
+     * Loads student's registered sections and places them into the day columns.
+     */
+    public void loadTimetable() {
+        try {
+            List<Section> secs = studentService.getTimetable(userId);
+            if (secs == null) secs = Collections.emptyList();
+
+            // prepare map day -> list of display lines
+            Map<String, List<String>> map = new LinkedHashMap<>();
+            for (String d : DAYS) map.put(d, new ArrayList<>());
+
+            for (Section s : secs) {
+                List<String> sectionDays = parseDays(s);
+                String start = safeTime(s.GetStartTime());
+                String end = safeTime(s.GetEndTime());
+                String timeDisplay = (start.isEmpty() && end.isEmpty()) ? "TBA" : (start + (end.isEmpty() ? "" : " - " + end));
+                String course = safeStr(s.GetCourseID());
+                int secId = safeSectionId(s);
+                String line = String.format("%s (S%d) — %s", course, secId, timeDisplay);
+
+                for (String d : sectionDays) {
+                    d = d.toUpperCase();
+                    if (!map.containsKey(d)) {
+                        // ignore unknown days, or you could add them
+                        continue;
                     }
-                } catch (InterruptedException | ExecutionException ex) {
-                    ex.printStackTrace();
-                    String msg = (ex.getCause() != null) ? ex.getCause().getMessage() : ex.getMessage();
-                    JOptionPane.showMessageDialog(TimetablePanel.this, "Failed to load timetable: " + msg, "Error", JOptionPane.ERROR_MESSAGE);
-                } finally {
-                    refreshBtn.setEnabled(true);
+                    map.get(d).add(line);
                 }
             }
-        };
-        w.execute();
+
+            // build table: columns = days
+            List<String> header = new ArrayList<>(DAYS);
+            model = new DefaultTableModel(header.toArray(), 0);
+
+            // single row: each column cell contains HTML list of lines
+            Object[] row = new Object[header.size()];
+            for (int i = 0; i < header.size(); i++) {
+                List<String> lines = map.get(header.get(i));
+                if (lines == null || lines.isEmpty()) row[i] = "";
+                else {
+                    StringBuilder sb = new StringBuilder("<html>");
+                    for (String L : lines) {
+                        sb.append(escapeHtml(L)).append("<br>");
+                    }
+                    sb.append("</html>");
+                    row[i] = sb.toString();
+                }
+            }
+            model.addRow(row);
+            table.setModel(model);
+
+            // nice widths
+            int colCount = table.getColumnCount();
+            if (colCount > 0) {
+                int w = Math.max(100, getWidth() / Math.max(1, colCount));
+                for (int i = 0; i < colCount; i++) table.getColumnModel().getColumn(i).setPreferredWidth(w);
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error loading timetable: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private List<String> parseDays(Section s) {
+        String daysCsv = s.GetDays(); // preferred
+        if (daysCsv != null && !daysCsv.trim().isEmpty()) {
+            String[] parts = daysCsv.split(",");
+            List<String> out = new ArrayList<>();
+            for (String p : parts) if (!p.trim().isEmpty()) out.add(p.trim().toUpperCase());
+            return out;
+        }
+        // fallback: single-day enum GetDay()
+        try {
+            Object dayObj = s.GetDay();
+            if (dayObj != null) return Collections.singletonList(dayObj.toString().toUpperCase());
+        } catch (Exception ignored) {}
+        return Collections.emptyList();
+    }
+
+    private String safeTime(String t) {
+        if (t == null) return "";
+        t = t.trim();
+        if (t.isEmpty()) return "";
+        // if it's already HH:mm return as is; else try parse/format
+        try {
+            LocalTime lt = LocalTime.parse(t);
+            return lt.format(fmt());
+        } catch (Exception e) {
+            try {
+                LocalTime lt = LocalTime.parse(t, DateTimeFormatter.ofPattern("H:mm"));
+                return lt.format(fmt());
+            } catch (Exception ex) {
+                return t; // fallback raw
+            }
+        }
+    }
+
+    private DateTimeFormatter fmt() { return DateTimeFormatter.ofPattern("HH:mm"); }
+
+    private int safeSectionId(Section s) {
+        try { return s.GetSectionID(); } catch (Exception ex) { return -1; }
+    }
+
+    private String safeStr(Object o) { return o == null ? "" : String.valueOf(o); }
+
+    private String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
     }
 }

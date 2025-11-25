@@ -11,6 +11,9 @@ public class Section {
     private Integer capacity;
     private Integer year;
     private DayOfWeek Day;
+    private String Days; 
+    private String StartTime;
+    private String EndTime; 
     
 
 
@@ -49,6 +52,15 @@ public class Section {
     public void SetDay(DayOfWeek Day){
         this.Day=Day;
     }
+    public void SetDays(String semester){
+        this.Days=semester;
+    }
+    public void SetStartTime(String semester){
+        this.StartTime=semester;
+    }
+    public void SetEndTime(String semester){
+        this.EndTime=semester;
+    }
  
 
     //getter functions
@@ -57,6 +69,15 @@ public class Section {
     }
     public String GetCourseID(){
         return course_id;
+    }
+    public String GetEndTime(){
+        return EndTime;
+    }
+    public String GetStartTime(){
+        return StartTime;
+    }
+    public String GetDays(){
+        return Days;
     }
     public String GetInstructorID(){
         return instructor_id;

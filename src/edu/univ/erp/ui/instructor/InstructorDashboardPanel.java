@@ -3,11 +3,12 @@ package edu.univ.erp.ui.instructor;
 import edu.univ.erp.service.InstructorService;
 
 import javax.swing.*;
+
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 
-public class InstructorDashboardPanel extends JPanel {
+public class InstructorDashboardPanel extends JPanel{
     private final InstructorService instructorService;
     private String currentUserId;
 

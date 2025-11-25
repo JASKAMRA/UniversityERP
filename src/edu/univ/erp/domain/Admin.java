@@ -9,30 +9,30 @@ public class Admin {
     public Admin() {}
 
     // Getter function
-    public int getAdminId(){ 
+    public int GetAdminId(){ 
         return adminId; 
     }
-    public String getUserId(){
+    public String GetUserId(){
          return userId; 
     }
-    public String getName(){
+    public String GetName(){
          return name; 
     }
-    public String getEmail(){ 
+    public String GetEmail(){ 
         return email; 
     }
 
     // Setter functions
-    public void setAdminId(int adminId){
+    public void SetAdminId(int adminId){
          this.adminId = adminId; 
     }
-    public void setUserId(String userId){ 
+    public void SetUserId(String userId){ 
         this.userId = userId; 
     }
-    public void setName(String name){ 
+    public void SetName(String name){ 
         this.name = name; 
     }
-    public void setEmail(String email){ 
+    public void SetEmail(String email){ 
         this.email = email; 
     }
 

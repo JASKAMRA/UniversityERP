@@ -4,7 +4,7 @@ import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.service.InstructorService;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.math.BigDecimal;
@@ -30,10 +30,10 @@ public class ClassStatsPanel extends JPanel {
     private JButton btnRefresh;
 
     // --- Aesthetic constants ---
-    private static final int PADDING = 15;
+
     private static final int GAP = 10;
     private static final Font STAT_LABEL_FONT = new Font("Arial", Font.BOLD, 14);
-    private static final Font STAT_VALUE_FONT = new Font("Monospaced", Font.BOLD, 16);
+
     private static final Color PRIMARY_COLOR = new Color(25, 135, 84); // A pleasant green color
 
     public ClassStatsPanel(InstructorService instructorService, String instructorUserId, int sectionId, String courseTitle) {

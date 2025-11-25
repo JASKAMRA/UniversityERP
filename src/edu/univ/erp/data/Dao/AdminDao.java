@@ -19,14 +19,14 @@ public class AdminDao {
         try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            ps.setString(1, a.getUserId());
-            ps.setString(2, a.getName());
-            ps.setString(3, a.getEmail());
+            ps.setString(1, a.GetUserId());
+            ps.setString(2, a.GetName());
+            ps.setString(3, a.GetEmail());
 
             int rows = ps.executeUpdate();
             if (rows == 1) {
                 try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) a.setAdminId(rs.getInt(1));
+                    if (rs.next()) a.SetAdminId(rs.getInt(1));
                 }
                 return true;
             }
@@ -47,10 +47,10 @@ public class AdminDao {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Admin a = new Admin();
-                    a.setAdminId(rs.getInt("admin_id"));
-                    a.setUserId(rs.getString("user_id"));
-                    a.setName(rs.getString("name"));
-                    a.setEmail(rs.getString("email"));
+                    a.SetAdminId(rs.getInt("admin_id"));
+                    a.SetUserId(rs.getString("user_id"));
+                    a.SetName(rs.getString("name"));
+                    a.SetEmail(rs.getString("email"));
                     return a;
                 }
             }

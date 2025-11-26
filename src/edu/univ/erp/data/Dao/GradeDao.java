@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GradeDao {
-    private void setString(PreparedStatement prepStatement, int index, String value) throws SQLException {
+    public void setString(PreparedStatement prepStatement, int index, String value) throws SQLException {
         prepStatement.setString(index, value);
     }
 

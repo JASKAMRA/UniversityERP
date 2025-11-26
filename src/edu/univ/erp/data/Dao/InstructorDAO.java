@@ -57,18 +57,16 @@ public class InstructorDAO {
 
     
     public Instructor findByUserId(String userId) {
-        String sql = "SELECT instructor_id, user_id, department, name, email FROM instructors WHERE user_id = ?";
+        String sql="select instructor_id, user_id, department, name, email FROM instructors WHERE user_id = ?";
         try (Connection connect=DBConnection.getAuthConnection();
-             PreparedStatement prepStatement=connect.prepareStatement(sql)) {
-            setString(prepStatement,1, userId);
+                PreparedStatement prepStatement=connect.prepareStatement(sql)) {
+                setString(prepStatement,1, userId);
             try (ResultSet resultSet=prepStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    Instructor instructor=mapRowToInstructor(resultSet);
+                    Instructor instructor=Map_TO_instructor(resultSet);
                     instructor.SetID(String.valueOf(resultSet.getInt("instructor_id")));
                     return instructor;
-                }
-            }
-        } catch (SQLException exception) {
+                }}} catch (SQLException exception) {
             exception.printStackTrace();
         }
         return null;
@@ -95,7 +93,7 @@ public class InstructorDAO {
     // }
 
     public boolean deleteById(int instructorId) {
-        String sql = "DELETE FROM instructors WHERE instructor_id = ?";
+        String sql = "DELETE FROM instructors WHERE instructor_id = ?";                 //delete by using id 
         try (Connection connect=DBConnection.getAuthConnection();
              PreparedStatement prepStatement=connect.prepareStatement(sql)) {
             prepStatement.setInt(1, instructorId);
@@ -120,23 +118,23 @@ public class InstructorDAO {
     //     }
     // }
 
-    private Instructor mapRowToInstructor(ResultSet rs) throws SQLException {
-        Instructor instructor=new Instructor();
-        instructor.SetUserID(rs.getString("user_id"));
-        instructor.Setdepartment(rs.getString("department"));
-        instructor.SetName(rs.getString("name"));
-        instructor.SetEmail(rs.getString("email"));
-        return instructor;
+    private Instructor Map_TO_instructor(ResultSet resultSet) throws SQLException {         //mapping to instructor and setting their values
+        Instructor Instructor1=new Instructor();
+        Instructor1.SetUserID(resultSet.getString("user_id"));
+        Instructor1.Setdepartment(resultSet.getString("department"));
+        Instructor1.SetName(resultSet.getString("name"));
+        Instructor1.SetEmail(resultSet.getString("email"));
+        return Instructor1;
     }
 
-    private int parseIntSafe(String s){
-        if (s.isEmpty() || s == null){
-            return 0;
-        }    
-        try {
-            return Integer.parseInt(s);
-        } catch (NumberFormatException exception) {
-            return 0;
-        }
-    }
+    // private int parseIntSafe(String s){
+    //     if (s.isEmpty() || s == null){
+    //         return 0;
+    //     }    
+    //     try {
+    //         return Integer.parseInt(s);
+    //     } catch (NumberFormatException exception) {
+    //         return 0;
+    //     }
+    // }
 }

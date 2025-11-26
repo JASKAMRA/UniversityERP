@@ -166,14 +166,13 @@ public class LoginPanel extends JPanel {
                 Role= null;
 }
 
-
             CurrentUser current_user = new CurrentUser(UserId, Role, Profile_on_UI);
             CurrentSession.get().SetMant(maintenance);
             CurrentSession.get().setUsr(current_user);
             
             main.show_to_user(current_user);
-        } catch (Exception ex) {                  
-            ex.printStackTrace();
-            MessageDialog.showError(this,"Login error"+ ex.getMessage());
+        } catch (Exception exception) {                  
+            exception.printStackTrace();
+            MessageDialog.showError(this,"Login error"+ exception.getMessage());
         }}
 }

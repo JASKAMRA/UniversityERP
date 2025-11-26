@@ -1,7 +1,5 @@
 package edu.univ.erp.ui.instructor;
-
 import edu.univ.erp.service.InstructorService;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -10,181 +8,140 @@ import java.awt.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * MySectionsPanel
- *
- * - Shows either ALL sections (default) or only sections assigned to current instructor
- * - Toggle button "My sections only" switches query (no "Owned" column)
- * - Uses InstructorService.getAllSections() and getAssignedSections(userId)
- * - Falls back to getAssignedSections() if getAllSections() not available
- */
 public class MySectionsPanel extends JPanel {
     private final InstructorService instructorService;
-    private final String currentUserId; // instructor's user_id from auth DB
-
+    private final String currentUserId; 
     private JTable table;
     private DefaultTableModel model;
     private JButton btnRefresh;
     private JToggleButton toggleMyOnly;
 
-    // --- Aesthetic constants ---
-    private static final int PADDING = 15;
-    private static final int GAP = 10;
-    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 18);
-    private static final Color PRIMARY_COLOR = new Color(70, 130, 180); // Steel Blue
-
     public MySectionsPanel(InstructorService service, String currentUserId) {
-        this.instructorService = service;
-        this.currentUserId = currentUserId;
+        this.instructorService=service;
+        this.currentUserId=currentUserId;
         initComponents();
-        loadSections(); // load default view (All sections, or assigned if All is unsupported)
+        loadSections(); 
     }
 
     private void initComponents() {
-        // 1. Overall Layout & Padding
-        setLayout(new BorderLayout(GAP, GAP));
-        setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
+        setLayout(new BorderLayout(10, 10));
+        setBorder(new EmptyBorder(15, 15,15, 15));
         setBackground(Color.WHITE);
-
-        // 2. Title (North)
         JLabel title = new JLabel("🗓️ Section Browser");
-        title.setFont(TITLE_FONT);
-        title.setForeground(PRIMARY_COLOR);
+        title.setFont( new Font("Arial", Font.BOLD, 18));
+        title.setForeground( new Color(70, 130, 180));
         add(title, BorderLayout.NORTH);
 
-        // 3. Top control bar (Filter/Refresh)
-        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, 0));
+        JPanel topBar=new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         topBar.setBackground(Color.WHITE);
-        
-        // Toggle Button
-        toggleMyOnly = new JToggleButton("Filter: My Sections Only");
-        toggleMyOnly.setBackground(new Color(255, 255, 200)); // Light yellow for toggle
+
+        toggleMyOnly=new JToggleButton("Filter: My Sections Only");
+        toggleMyOnly.setBackground(new Color(255, 255, 200)); 
         toggleMyOnly.setFocusPainted(false);
-        
-        // Refresh Button
-        btnRefresh = new JButton("🔄 Refresh");
+
+        btnRefresh=new JButton("🔄 Refresh");
         btnRefresh.setBackground(Color.LIGHT_GRAY);
         btnRefresh.setFocusPainted(false);
 
         topBar.add(toggleMyOnly);
         topBar.add(btnRefresh);
-        // after btnRefresh and toggleMyOnly are created
-        JButton btnOpenGrades = new JButton("📘 Open Grades");
+        JButton btnOpenGrades=new JButton("📘 Open Grades");
         btnOpenGrades.setBackground(new Color(200,220,255));
         btnOpenGrades.setFocusPainted(false);
         topBar.add(btnOpenGrades);
-
-        // wire action
         btnOpenGrades.addActionListener(e -> openGradebookForSelectedSection());
 
-        
-        // Add a titled panel wrapper for controls
-        JPanel controlsWrapper = new JPanel(new BorderLayout());
+        JPanel controlsWrapper=new JPanel(new BorderLayout());
         controlsWrapper.setBorder(new TitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY), "View Options"));
         controlsWrapper.add(topBar, BorderLayout.CENTER);
         add(controlsWrapper, BorderLayout.NORTH);
 
-
-        // 4. Table model and setup
-        model = new DefaultTableModel(new Object[]{
+        model=new DefaultTableModel(new Object[]{
                 "Section ID", "Course ID", "Course Title", "Day", "Semester", "Year", "Capacity"
         }, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
-            // Define column classes for proper alignment/sorting
+
             @Override
             public Class<?> getColumnClass(int columnIndex) {
                 if (columnIndex == 0 || columnIndex == 5 || columnIndex == 6) return Integer.class;
                 return String.class;
             }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+            
         };
 
-        table = new JTable(model);
+        table=new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setRowHeight(25);
         table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
         
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
-        add(scrollPane, BorderLayout.CENTER);
+        JScrollPane scPane=new JScrollPane(table);
+        scPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+        add(scPane, BorderLayout.CENTER);
 
-        // 5. Wire actions
         btnRefresh.addActionListener(e -> loadSections());
         toggleMyOnly.addActionListener(e -> loadSections());
     }
 
-    /**
-     * Loads sections according to toggle state:
-     * - if toggleMyOnly is selected -> instructorService.getAssignedSections(currentUserId)
-     * - else -> instructorService.getAllSections() (fallbacks to assigned if not implemented)
-     */
     private void openGradebookForSelectedSection() {
-    Integer sid = getSelectedSectionId();
-    if (sid == null) {
+    Integer sec_id=getSelectedSectionId();
+    if (sec_id==null) {
         JOptionPane.showMessageDialog(this, "Select a section first.", "No selection", JOptionPane.WARNING_MESSAGE);
         return;
     }
 
-    // you may have course title in the table; try to read it
-    int sel = table.getSelectedRow();
-    String courseTitle = "";
+    int select = table.getSelectedRow();
+    String courseTitle="";
         try {
-            Object ct = model.getValueAt(sel, 2); // 2 = Course Title column in your model
-            courseTitle = ct == null ? "" : ct.toString();
+            Object ct=model.getValueAt(select, 2);
+            courseTitle=ct == null ? "" : ct.toString();
         } catch (Exception ignored) {}
 
-        // Create GradebookPanel and show in modal dialog
-        GradebookPanel gb = new GradebookPanel(instructorService, sid, courseTitle, currentUserId);
-        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Gradebook - Section " + sid, Dialog.ModalityType.APPLICATION_MODAL);
-        dlg.getContentPane().setLayout(new BorderLayout());
-        dlg.getContentPane().add(gb, BorderLayout.CENTER);
-        dlg.pack();
-        dlg.setSize(1000, 600);
-        dlg.setLocationRelativeTo(this);
-        dlg.setVisible(true);
+        GradebookPanel gbook=new GradebookPanel(instructorService, sec_id, courseTitle, currentUserId);
+        JDialog dialog=new JDialog(SwingUtilities.getWindowAncestor(this), "Gradebook - Section " + sec_id, Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.getContentPane().setLayout(new BorderLayout());
+        dialog.getContentPane().add(gbook, BorderLayout.CENTER);
+        dialog.pack();
+        dialog.setSize(1000, 600);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     public void loadSections() {
         SwingUtilities.invokeLater(() -> {
             model.setRowCount(0);
-            List<Map<String,Object>> rows = null;
-            boolean myOnly = toggleMyOnly.isSelected();
-            
-            // Show loading row
+            List<Map<String,Object>> rows=null;
+            boolean myOnly=toggleMyOnly.isSelected();
+
             model.addRow(new Object[]{"Loading...", "Please Wait...", "", "", "", "", ""});
             
             try {
                 if (myOnly) {
                     rows = instructorService.GetAssgnSec(currentUserId);
                 } else {
-                    // Prefer getAllSections(); fallback to assignedSections if not implemented
                     try {
                         rows = instructorService.GetAllSec();
                     } catch (AbstractMethodError | UnsupportedOperationException ame) {
-                        // Fallback logic
                         rows = instructorService.GetAssgnSec(currentUserId);
-                        // Optional: Show warning that full list is unavailable
                         JOptionPane.showMessageDialog(this, "Full section list unavailable; defaulting to your assigned sections.", "Info", JOptionPane.INFORMATION_MESSAGE);
-                        toggleMyOnly.setSelected(true); // Ensure toggle reflects actual data loaded
+                        toggleMyOnly.setSelected(true); 
                     }
                 }
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                // If anything goes wrong, try one last fallback to assigned sections
+            } catch (Exception exception) {
+                exception.printStackTrace();
                 try {
                     rows = instructorService.GetAssgnSec(currentUserId);
-                } catch (Exception ex2) {
-                    ex2.printStackTrace();
+                } catch (Exception exception2) {
+                    exception2.printStackTrace();
                     JOptionPane.showMessageDialog(this, "Failed to load sections. Check DB connection.", "Error", JOptionPane.ERROR_MESSAGE);
                     rows = null;
                 }
             }
-            
-            model.setRowCount(0); // Clear loading row
+            model.setRowCount(0); 
 
-            if (rows == null || rows.isEmpty()) {
+            if (rows.isEmpty() || rows == null) {
                  model.addRow(new Object[]{"No sections found.", "", "", "", "", "", ""});
                  return;
             }
@@ -204,9 +161,15 @@ public class MySectionsPanel extends JPanel {
     }
 
     private Integer safeGetIntOrNull(Object o) {
-        if (o == null) return null;
-        if (o instanceof Integer) return (Integer) o;
-        if (o instanceof Number) return ((Number) o).intValue();
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Integer) {
+            return (Integer) o;
+        }
+        if (o instanceof Number) {
+            return ((Number) o).intValue();
+        }
         try {
             return Integer.parseInt(String.valueOf(o));
         } catch (Exception ex) {
@@ -215,23 +178,22 @@ public class MySectionsPanel extends JPanel {
     }
 
     private String safeToString(Object o) {
-        return o == null ? "" : o.toString();
+        return o==null ? "" : o.toString();
     }
-
-    /**
-     * Returns the selected section id (or null).
-     */
     public Integer getSelectedSectionId() {
-        int sel = table.getSelectedRow();
-        if (sel < 0) return null;
-        Object v = model.getValueAt(sel, 0);
-        return safeGetIntOrNull(v);
+        int select = table.getSelectedRow();
+        if (select < 0) {
+            return null;
+        }
+        Object val = model.getValueAt(select, 0);
+        return safeGetIntOrNull(val);
     }
 
-    /**
-     * Expose table/model for callers (e.g., InstructorDashboardPanel)
-     */
-    public JTable getTable() { return table; }
-    public DefaultTableModel getModel() { return model; }
+    public JTable getTable() {
+         return table; 
+    }
+    public DefaultTableModel getModel() {
+         return model; 
+    }
 
 }

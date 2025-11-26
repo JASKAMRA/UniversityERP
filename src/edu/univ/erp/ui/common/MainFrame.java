@@ -1,8 +1,6 @@
 package edu.univ.erp.ui.common;
-
 import edu.univ.erp.access.AccessControl;
 import edu.univ.erp.domain.Role;
-
 import edu.univ.erp.service.InstructorService;
 import edu.univ.erp.service.InstructorServiceImpl;
 import edu.univ.erp.service.StudentService;
@@ -13,7 +11,6 @@ import edu.univ.erp.ui.instructor.InstructorDashboardPanel;
 import edu.univ.erp.ui.student.*;
 import edu.univ.erp.ui.util.CurrentSession;
 import edu.univ.erp.ui.util.CurrentUser;
-
 import javax.swing.*;
 import java.awt.*;
 import java.lang.reflect.Method;
@@ -21,18 +18,14 @@ import java.lang.reflect.Method;
 
 public class MainFrame extends JFrame {
 
-    //declaring the main components ie the frame, the banner , the navigation panel and the panel
     private static MainFrame Main_instance;
     private BannerPanel Main_banner;
     private NavigationPanel navigation;
     private JPanel DisplayArea; 
 
-    //declaring some Service elements for student and instructor
     private final StudentService Student_Service= new StudentServiceImpl();
     private final InstructorService Instructor_Service= new InstructorServiceImpl();
    
-
-    //declaring cards for dashboards and login card and for rest of the cards we will use lazy method
     public static final String Card_Instructor_Dashboard = "instructor_dashboard";
     public static final String Card_Admin_Dashboard = "admin_dashboard";
     public static final String Card_Login = "Login_Card";
@@ -68,22 +61,20 @@ public class MainFrame extends JFrame {
         ;
 
    
-        setLayout(new BorderLayout()); // adding a border         
-        add(DisplayArea, BorderLayout.CENTER);   // adding main components into the border
+        setLayout(new BorderLayout());          
+        add(DisplayArea, BorderLayout.CENTER);   
         add(Main_banner, BorderLayout.NORTH);
         add(navigation, BorderLayout.WEST);
-        setSize(1200, 700); //settings its size
+        setSize(1200, 700); 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         
-
-        // now we have to show login card whenever we start the application
         Show_any_Card(Card_Login);
     }
 
     
-    public void Show_any_Card(String Card_name) {                             //this is for showing of custom cards
+    public void Show_any_Card(String Card_name) {                            
         CardLayout Card1=(CardLayout) DisplayArea.getLayout();
         Card1.show(DisplayArea,Card_name);
         
@@ -106,7 +97,7 @@ public class MainFrame extends JFrame {
     }
 
     public void show_to_user(CurrentUser user) {
-        //stating mantenance false by default
+        
         boolean maintenance=false;
 
         maintenance=AccessControl.isMaintenance();

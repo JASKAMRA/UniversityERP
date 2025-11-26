@@ -1,14 +1,11 @@
 package edu.univ.erp.ui.instructor;
-
 import edu.univ.erp.access.AccessControl;
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.domain.Role;
 import edu.univ.erp.ui.util.CurrentSession;
 import edu.univ.erp.service.InstructorService;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.*;
@@ -17,12 +14,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * CSV Import/Export Dialog with:
- * ✓ Maintenance mode blocking
- * ✓ Ownership check
- * ✓ Safe CSV parsing
- */
+
 public class CSVImportExportDialog extends JDialog {
 
     public enum Mode { EXPORT, IMPORT }
@@ -33,20 +25,11 @@ public class CSVImportExportDialog extends JDialog {
     private final Mode mode;
     private final String instructorUserId;
 
-    private JButton btnChoose;
-    private JButton btnRun;
-    private JTextArea taLog;
+    private JButton bChoose;
+    private JButton bRun;
+    private JTextArea tLog;
     private JFileChooser fc;
     private JLabel lblTarget;
-
-    // --- Aesthetic constants ---
-    private static final int PADDING = 15;
-    private static final int GAP = 10;
-    private static final Color PRIMARY_COLOR = new Color(70, 130, 180);
-    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 18);
-    private static final Font LOG_FONT = new Font("Monospaced", Font.PLAIN, 12);
-    private static final Dimension BUTTON_SIZE = new Dimension(180, 35);
-
 
     public CSVImportExportDialog(
             Window owner,
@@ -64,26 +47,25 @@ public class CSVImportExportDialog extends JDialog {
         this.mode = mode;
 
         init();
-        ((JPanel)getContentPane()).setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
+        ((JPanel)getContentPane()).setBorder(new EmptyBorder(15, 15, 15, 15));
         pack();
         setLocationRelativeTo(owner);
         setResizable(false);
     }
 
     private void init() {
-        setLayout(new BorderLayout(GAP, GAP));
+        setLayout(new BorderLayout(10, 10));
         setBackground(Color.WHITE);
 
-        // 1. Header (North)
-        JPanel headerPanel = new JPanel(new BorderLayout());
+        JPanel headerPanel= new JPanel(new BorderLayout());
         headerPanel.setBackground(Color.WHITE);
         
-        String action = mode == Mode.EXPORT ? "EXPORT" : "IMPORT";
-        JLabel title = new JLabel(String.format("File Operation: %s Grades", action));
-        title.setFont(TITLE_FONT);
-        title.setForeground(PRIMARY_COLOR);
+        String action= mode == Mode.EXPORT ? "EXPORT" : "IMPORT";
+        JLabel title=new JLabel(String.format("File Operation: %s Grades", action));
+        title.setFont(new Font("Arial", Font.BOLD, 18));
+        title.setForeground(new Color(70, 130, 180));
         
-        lblTarget = new JLabel("Target: " + courseTitle + " (Section ID: " + sectionId + ")");
+        lblTarget=new JLabel("Target: " + courseTitle + " (Section ID: " + sectionId + ")");
         lblTarget.setFont(new Font("Arial", Font.ITALIC, 14));
 
         headerPanel.add(title, BorderLayout.NORTH);
@@ -92,88 +74,82 @@ public class CSVImportExportDialog extends JDialog {
         add(headerPanel, BorderLayout.NORTH);
 
 
-        // 2. Control Panel (Top Center)
-        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, 0));
-        controlPanel.setBorder(new EmptyBorder(GAP, 0, GAP, 0));
+        JPanel controlPanel=new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        controlPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
         controlPanel.setBackground(Color.WHITE);
         
-        btnChoose = new JButton(mode == Mode.EXPORT ? "Select Output File" : "Select Input CSV");
-        btnRun = new JButton(mode == Mode.EXPORT ? "Run Export" : "Run Import");
+        bChoose= new JButton(mode == Mode.EXPORT ? "Select Output File" : "Select Input CSV");
+        bRun= new JButton(mode == Mode.EXPORT ? "Run Export" : "Run Import");
 
-        // Style buttons
-        styleButton(btnChoose, Color.LIGHT_GRAY, Color.BLACK);
-        styleButton(btnRun, mode == Mode.EXPORT ? new Color(180, 220, 255) : new Color(255, 180, 180), mode == Mode.EXPORT ? PRIMARY_COLOR : Color.RED);
+        styleButton(bChoose, Color.LIGHT_GRAY, Color.BLACK);
+        styleButton(bRun, mode == Mode.EXPORT ? new Color(180, 220, 255) : new Color(255, 180, 180), mode == Mode.EXPORT ? new Color(70, 130, 180) : Color.RED);
 
-        controlPanel.add(btnChoose);
-        controlPanel.add(btnRun);
+        controlPanel.add(bChoose);
+        controlPanel.add(bRun);
         add(controlPanel, BorderLayout.CENTER);
 
-
-        // 3. Log Area (South)
-        taLog = new JTextArea(10, 60);
-        taLog.setEditable(false);
-        taLog.setFont(LOG_FONT);
-        taLog.setMargin(new Insets(6,6,6,6));
-        taLog.setBorder(BorderFactory.createTitledBorder("Operation Log"));
+        tLog= new JTextArea(10, 60);
+        tLog.setEditable(false);
+        tLog.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        tLog.setMargin(new Insets(6,6,6,6));
+        tLog.setBorder(BorderFactory.createTitledBorder("Operation Log"));
         
-        add(new JScrollPane(taLog), BorderLayout.SOUTH);
+        add(new JScrollPane(tLog), BorderLayout.SOUTH);
 
 
         fc = new JFileChooser();
         fc.setFileFilter(new FileNameExtensionFilter("CSV files (*.csv)", "csv"));
-        if (mode == Mode.EXPORT) {
+        if (mode==Mode.EXPORT) {
             fc.setSelectedFile(new File(courseTitle.replace(' ', '_') + "_Section" + sectionId + "_Grades.csv"));
         }
 
 
-        // 4. Action Listeners
-        btnChoose.addActionListener(e -> handleChooseFile());
-        btnRun.addActionListener(e -> runAction());
+        bChoose.addActionListener(e -> handleChooseFile());
+        bRun.addActionListener(e -> runAction());
         
-        taLog.append("Dialog initialized. Please select file and run the action.\n");
+        tLog.append("Dialog initialized. Please select file and run the action.\n");
     }
     
     private void styleButton(JButton button, Color background, Color foreground) {
-        button.setPreferredSize(BUTTON_SIZE);
+        button.setPreferredSize(new Dimension(180, 35));
         button.setFocusPainted(false);
         button.setBackground(background);
         button.setForeground(foreground);
     }
     
     private void handleChooseFile() {
-        if (mode == Mode.EXPORT) {
+        if (mode==Mode.EXPORT) {
             fc.setDialogType(JFileChooser.SAVE_DIALOG);
             if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-                File f = fc.getSelectedFile();
-                if (!f.getName().toLowerCase().endsWith(".csv"))
-                    f = new File(f.getAbsolutePath() + ".csv");
-                btnChoose.putClientProperty("selectedFile", f);
-                btnChoose.setText("Save To: " + f.getName());
-                taLog.append("Selected output file: " + f.getName() + "\n");
+                File file=fc.getSelectedFile();
+                if (!file.getName().toLowerCase().endsWith(".csv"))
+                    file=new File(file.getAbsolutePath() + ".csv");
+                bChoose.putClientProperty("selectedFile", file);
+                bChoose.setText("Save To: " + file.getName());
+                tLog.append("Selected output file: " + file.getName() + "\n");
             }
         } else {
             fc.setDialogType(JFileChooser.OPEN_DIALOG);
             if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
                 File f = fc.getSelectedFile();
-                btnChoose.putClientProperty("selectedFile", f);
-                btnChoose.setText("File: " + f.getName());
-                taLog.append("Selected input file: " + f.getName() + "\n");
+                bChoose.putClientProperty("selectedFile", f);
+                bChoose.setText("File: " + f.getName());
+                tLog.append("Selected input file: " + f.getName() + "\n");
             }
         }
     }
 
     private void runAction() {
-        File file = (File) btnChoose.getClientProperty("selectedFile");
+        File file = (File) bChoose.getClientProperty("selectedFile");
         if (file == null) {
             JOptionPane.showMessageDialog(this, "Please choose a file.", "No file", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        taLog.setText("Starting operation...\n");
+        tLog.setText("Starting operation...\n");
 
-        // 🔥 Maintenance Check
         Role role = CurrentSession.get().getUsr().GetRole();
         if (!AccessControl.isActionAllowed(role, true)) {
-            taLog.append("Operation denied: System in maintenance mode.\n");
+            tLog.append("Operation denied: System in maintenance mode.\n");
             JOptionPane.showMessageDialog(this,
                     "System is in maintenance mode.\nWrite operations (Import/Export) are disabled.",
                     "Maintenance ON",
@@ -181,24 +157,24 @@ public class CSVImportExportDialog extends JDialog {
             return;
         }
 
-        // 🔥 Ownership Check
         if (!instructorService.IsInstructorIn(instructorUserId, sectionId)) {
-            taLog.append("Operation denied: Instructor does not own this section.\n");
+            tLog.append("Operation denied: Instructor does not own this section.\n");
             JOptionPane.showMessageDialog(this, "Not your section!", "Permission denied", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        if (mode == Mode.EXPORT) doExport(file);
-        else doImport(file);
+        if (mode != Mode.EXPORT){
+            doImport(file);
+        }   
+        else{ 
+            doExport(file);
+        }
     }
 
-    // ============================================================
-    // EXPORT CSV
-    // ============================================================
     private void doExport(File file) {
         int rowsExported = 0;
         try (Connection conn = DBConnection.getStudentConnection()) {
-            // Note: Components are not unique, so we export all existing grade records.
+  
             String sql =
                     "SELECT e.enrollment_id, st.roll_no, st.name, g.component, g.score " +
                     "FROM enrollments e " +
@@ -207,119 +183,114 @@ public class CSVImportExportDialog extends JDialog {
                     "WHERE e.section_id = ? " +
                     "ORDER BY st.roll_no, g.component";
 
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1, sectionId);
+            PreparedStatement prepStatement = conn.prepareStatement(sql);
+            prepStatement.setInt(1, sectionId);
 
-            ResultSet rs = ps.executeQuery();
+            ResultSet resultSet = prepStatement.executeQuery();
 
             try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-                // Header (includes data required for import later: enrollment_id, component, score)
+
                 pw.println("enrollment_id,roll_no,name,component,score");
 
-                while (rs.next()) {
+                while (resultSet.next()) {
                     pw.printf("%s,%s,%s,%s,%s%n",
-                            rs.getInt("enrollment_id"),
-                            escape(rs.getString("roll_no")),
-                            escape(rs.getString("name")),
-                            escape(rs.getString("component")),
-                            rs.getObject("score")
+                            resultSet.getInt("enrollment_id"),
+                            escape(resultSet.getString("roll_no")),
+                            escape(resultSet.getString("name")),
+                            escape(resultSet.getString("component")),
+                            resultSet.getObject("score")
                     );
                     rowsExported++;
                 }
             }
 
-            taLog.append(String.format("Export complete. %d rows written to %s.\n", rowsExported, file.getName()));
+            tLog.append(String.format("Export complete. %d rows written to %s.\n", rowsExported, file.getName()));
             JOptionPane.showMessageDialog(this, String.format("Export successful! %d records exported.", rowsExported));
 
-        } catch (Exception ex) {
-            taLog.append("Error during export: " + ex.getMessage() + "\n");
-            JOptionPane.showMessageDialog(this, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception exception) {
+            tLog.append("Error during export: " + exception.getMessage() + "\n");
+            JOptionPane.showMessageDialog(this, "Export failed: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // ============================================================
-    // IMPORT CSV
-    // ============================================================
     private void doImport(File file) {
-        int rowsRead = 0;
-        int successfulSaves = 0;
+        int rowsRead=0;
+        int successfulSaves=0;
         
-        try (BufferedReader br = new BufferedReader(new FileReader(file));
+        try (BufferedReader bufferRead = new BufferedReader(new FileReader(file));
              Connection conn = DBConnection.getStudentConnection()) {
 
-            String header = br.readLine(); // skip header
+            String header = bufferRead.readLine(); 
             if (header == null) {
-                taLog.append("Error: Input file is empty.\n");
+                tLog.append("Error: Input file is empty.\n");
                 JOptionPane.showMessageDialog(this, "Input file is empty.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            // Basic check if header contains key fields (enrollment_id, component, score)
             if (!(header.contains("enrollment_id") && header.contains("component") && header.contains("score"))) {
-                 taLog.append("Error: CSV header is missing required fields (enrollment_id, component, score).\n");
+                 tLog.append("Error: CSV header is missing required fields (enrollment_id, component, score).\n");
                  JOptionPane.showMessageDialog(this, "CSV header is invalid. Must contain enrollment_id, component, and score.", "Error", JOptionPane.ERROR_MESSAGE);
                  return;
             }
 
             String line;
-            while ((line = br.readLine()) != null) {
+            while ((line = bufferRead.readLine()) != null) {
                 rowsRead++;
-                if (line.trim().isEmpty()) continue;
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
                 
                 try {
                     String[] a = split(line);
-                    // Expected array indices: 0:enrollment_id, 1:roll_no, 2:name, 3:component, 4:score
                     int enrollmentId = Integer.parseInt(a[0].trim());
                     String comp = a[3].trim();
                     String scoreStr = a[4].trim();
                     
                     BigDecimal score = scoreStr.isEmpty() ? null : new BigDecimal(scoreStr);
                     
-                    // The core service call to save/update the grade
                     boolean ok = instructorService.Save_Grade(enrollmentId, comp, score);
                     
                     if (ok) {
                         successfulSaves++;
                     } else {
-                        taLog.append(String.format("Row %d: Failed to save (EnrollID %d, Comp %s). Check enrollment ID.\n", rowsRead, enrollmentId, comp));
+                        tLog.append(String.format("Row %d: Failed to save (EnrollID %d, Comp %s). Check enrollment ID.\n", rowsRead, enrollmentId, comp));
                     }
                 } catch (NumberFormatException | ArrayIndexOutOfBoundsException ex) {
-                    taLog.append(String.format("Row %d: Parsing error or missing data. Skipped line: %s\n", rowsRead, line.substring(0, Math.min(line.length(), 40)) + "..."));
+                    tLog.append(String.format("Row %d: Parsing error or missing data. Skipped line: %s\n", rowsRead, line.substring(0, Math.min(line.length(), 40)) + "..."));
                 }
             }
 
-            taLog.append(String.format("Import complete. Read %d rows. Successfully saved/updated %d records.\n", rowsRead, successfulSaves));
+            tLog.append(String.format("Import complete. Read %d rows. Successfully saved/updated %d records.\n", rowsRead, successfulSaves));
             JOptionPane.showMessageDialog(this, String.format("Import finished. Successfully updated %d records.", successfulSaves));
 
         } catch (Exception ex) {
-            taLog.append("Fatal error during import: " + ex.getMessage() + "\n");
+            tLog.append("Fatal error during import: " + ex.getMessage() + "\n");
             JOptionPane.showMessageDialog(this, "Import failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // ============================================================
-    // CSV Helper methods (Logic Unchanged)
-    // ============================================================
     private String escape(String s) {
-        if (s == null) return "";
-        if (s.contains(",") || s.contains("\"") || s.contains("\n")) // Added newline for safety
+        if (s == null){ 
+            return "";
+        }
+        if (s.contains("\"") ||s.contains(",")  || s.contains("\n")){
             return "\"" + s.replace("\"", "\"\"") + "\"";
+        }
         return s;
     }
 
     private String[] split(String l) {
-        // Simple manual CSV parsing based on quoted fields (Logic Unchanged)
-        List<String> out = new ArrayList<>();
-        StringBuilder sb = new StringBuilder();
+        List<String> o = new ArrayList<>();
+        StringBuilder stringbuild = new StringBuilder();
         boolean inQ = false;
 
         for (char c : l.toCharArray()) {
             if (c == '"') inQ = !inQ;
             else if (c == ',' && !inQ) {
-                out.add(sb.toString().trim());
-                sb.setLength(0);
-            } else sb.append(c);
+                o.add(stringbuild.toString().trim());
+                stringbuild.setLength(0);
+            } else stringbuild.append(c);
         }
-        out.add(sb.toString().trim());
-        return out.toArray(new String[0]);
+        o.add(stringbuild.toString().trim());
+        return o.toArray(new String[0]);
     }
 }

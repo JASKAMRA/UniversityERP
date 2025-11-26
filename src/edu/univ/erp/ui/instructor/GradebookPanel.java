@@ -1,11 +1,9 @@
 package edu.univ.erp.ui.instructor;
-
 import edu.univ.erp.access.AccessControl;
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.domain.Role;
 import edu.univ.erp.service.InstructorService;
 import edu.univ.erp.ui.util.CurrentSession;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -16,13 +14,6 @@ import java.sql.*;
 import java.util.*;
 import java.util.List;
 
-/**
- * Polished GradebookPanel
- * - fixed component list (dropdown) with enforced maxima
- * - upsert behavior (no duplicates)
- * - sexy UI: toolbar, colored buttons, alternating row striping, right-aligned scores, log
- * - maintenance + ownership checks
- */
 public class GradebookPanel extends JPanel {
 
     private final InstructorService instructorService;
@@ -37,25 +28,22 @@ public class GradebookPanel extends JPanel {
     private JButton btnSaveAll;
     private JButton btnFinalize;
     private JButton btnDefinalize;
-    private JTextArea taLog;
+    private JTextArea tLog;
     private JComboBox<String> compEditor;
 
-    // fixed component maxima (from user's list)
-    private final LinkedHashMap<String, BigDecimal> componentMax = new LinkedHashMap<>();
+    private final LinkedHashMap<String, BigDecimal> componentMax=new LinkedHashMap<>();
 
     public GradebookPanel(InstructorService service, int sectionId, String courseTitle, String instructorUserId) {
         this.instructorService = service;
+        this.instructorUserId = instructorUserId;
         this.sectionId = sectionId;
         this.courseTitle = courseTitle;
-        this.instructorUserId = instructorUserId;
-
         initComponentMax();
         initComponents();
         loadStudents();
     }
 
     private void initComponentMax() {
-        // user's provided component maxima
         componentMax.put("Assignment 1", new BigDecimal("10"));
         componentMax.put("Assignment 2", new BigDecimal("10"));
         componentMax.put("Midsem", new BigDecimal("25"));
@@ -69,7 +57,6 @@ public class GradebookPanel extends JPanel {
         setLayout(new BorderLayout(8, 8));
         setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
 
-        // Top toolbar with colored buttons
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
         toolbar.setBorder(BorderFactory.createEmptyBorder(6,6,6,6));
@@ -96,105 +83,99 @@ public class GradebookPanel extends JPanel {
 
         add(toolbar, BorderLayout.NORTH);
 
-        // Table model and table
         model = new DefaultTableModel(new Object[]{"Enrollment ID","Roll No","Name","Component","Score"}, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
-                // only component and score editable
-                return col == 3 || col == 4;
+                return col == 4 || col == 3;
             }
         };
 
         table = new JTable(model) {
-            // alternating row colors
+            
             @Override
             public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
                 Component c = super.prepareRenderer(renderer, row, column);
-                if (!isRowSelected(row)) {
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 250, 250));
-                } else {
+               if (isRowSelected(row)) {      // check krliyo yeh 
                     c.setBackground(new Color(220, 235, 255));
+                } 
+                else {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 250, 250));
                 }
                 return c;
             }
         };
 
-        // hide enrollment id column width
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
-        table.setRowHeight(26);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setRowHeight(26);
 
-        // right align score column
         DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
         rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
         table.getColumnModel().getColumn(4).setCellRenderer(rightRenderer);
 
-        // component editor = dropdown of allowed components (prevents typos)
         compEditor = new JComboBox<>(componentMax.keySet().toArray(new String[0]));
         compEditor.setEditable(false);
-        TableColumn compCol = table.getColumnModel().getColumn(3);
-        compCol.setCellEditor(new DefaultCellEditor(compEditor));
-        compCol.setPreferredWidth(180);
+        TableColumn compColumn = table.getColumnModel().getColumn(3);
+        compColumn.setCellEditor(new DefaultCellEditor(compEditor));
+        compColumn.setPreferredWidth(180);
 
         add(new JScrollPane(table), BorderLayout.CENTER);
 
-        // Log area
-        taLog = new JTextArea(6, 80);
-        taLog.setEditable(false);
-        taLog.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        taLog.setBackground(new Color(30,30,30));
-        taLog.setForeground(new Color(220,220,220));
-        taLog.setBorder(BorderFactory.createEmptyBorder(6,6,6,6));
-        add(new JScrollPane(taLog), BorderLayout.SOUTH);
+        tLog = new JTextArea(6, 80);
+        tLog.setEditable(false);
+        tLog.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        tLog.setBackground(new Color(30,30,30));
+        tLog.setForeground(new Color(220,220,220));
+        tLog.setBorder(BorderFactory.createEmptyBorder(6,6,6,6));
+        add(new JScrollPane(tLog), BorderLayout.SOUTH);
 
-        // action wiring
         btnRefresh.addActionListener(e -> loadStudents());
         btnSaveSelected.addActionListener(e -> saveSelectedGrade());
         btnSaveAll.addActionListener(e -> saveAllGrades());
         btnFinalize.addActionListener(e -> finalizeSection());
         btnDefinalize.addActionListener(e -> definalizeSection());
 
-        // tooltip hints
         table.setToolTipText("Select a student row. Edit Component (choose) and Score then Save.");
 
-        // small UX: double-click component cell focuses editor
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     int r = table.rowAtPoint(e.getPoint());
                     int c = table.columnAtPoint(e.getPoint());
-                    if (c == 3) table.editCellAt(r, c);
+                    if (c == 3) {
+                        table.editCellAt(r, c);
+                    }
                 }
             }
         });
     }
 
     private JButton makeButton(String text, String tooltip) {
-        JButton b = new JButton(text);
-        b.setFocusable(false);
-        b.setToolTipText(tooltip);
-        b.setBackground(new Color(60,120,200));
-        b.setForeground(Color.WHITE);
-        b.setBorder(BorderFactory.createEmptyBorder(6,10,6,10));
-        return b;
+        JButton but=new JButton(text);
+        but.setFocusable(false);
+        but.setToolTipText(tooltip);
+        but.setBackground(new Color(60,120,200));
+        but.setForeground(Color.WHITE);
+        but.setBorder(BorderFactory.createEmptyBorder(6,10,6,10));
+        return but;
     }
 
     private void appendLog(String s) {
-    taLog.append("[" 
+    tLog.append("[" 
             + new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date()) 
             + "] " + s + "\n");
 
-    taLog.setCaretPosition(taLog.getDocument().getLength());
+    tLog.setCaretPosition(tLog.getDocument().getLength());
 }
 
 
     private void loadStudents() {
         model.setRowCount(0);
-        taLog.setText("");
+        tLog.setText("");
         try {
             List<Map<String,Object>> rows = instructorService.GetstuInSec(sectionId);
-            if (rows == null) {
+            if (rows==null) {
                 appendLog("No student rows returned.");
                 return;
             }
@@ -203,7 +184,6 @@ public class GradebookPanel extends JPanel {
                         r.get("enrollment_id"),
                         r.get("roll_no"),
                         r.get("name"),
-                        // If DB provided a component that doesn't match exactly, try to map to a known component (case-insensitive)
                         mapToKnownComponent(r.get("component")),
                         r.get("score") == null ? "" : r.get("score")
                 });
@@ -214,20 +194,24 @@ public class GradebookPanel extends JPanel {
             appendLog("Error loading students: " + ex.getMessage());
         }
     }
-
     private String mapToKnownComponent(Object compObj) {
-        if (compObj == null) return "";
-        String s = String.valueOf(compObj).trim();
-        if (s.isEmpty()) return "";
-        for (String k : componentMax.keySet()) {
-            if (k.equalsIgnoreCase(s)) return k;
+        if (compObj == null) {
+            return "";
         }
-        // unknown -> return raw for visibility
+        String s = String.valueOf(compObj).trim();
+        if (s.isEmpty()){
+             return "";
+        }     
+        for (String k : componentMax.keySet()) {
+            if (k.equalsIgnoreCase(s)) {
+                return k;
+            }    
+        }
         return s;
     }
 
     private boolean checkMaintenanceAndOwnership() {
-        Role role = CurrentSession.get().getUsr().GetRole();
+        Role role=CurrentSession.get().getUsr().GetRole();
         if (!AccessControl.isActionAllowed(role, true)) {
             JOptionPane.showMessageDialog(this,
                     "System is in maintenance mode. Write operations are disabled.",
@@ -243,24 +227,29 @@ public class GradebookPanel extends JPanel {
     }
 
     private void saveSelectedGrade() {
-        int row = table.getSelectedRow();
-        if (row < 0) {
+        int r=table.getSelectedRow();
+        if (r < 0) {
             JOptionPane.showMessageDialog(this, "Select a student row.", "No row", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        if (!checkMaintenanceAndOwnership()) return;
-
-        Object enrollObj = model.getValueAt(row, 0);
-        if (enrollObj == null) {
+        if (!checkMaintenanceAndOwnership()){
+            return;
+        }
+        Object enrollObject=model.getValueAt(r, 0);
+        if (enrollObject==null) {
             JOptionPane.showMessageDialog(this, "Invalid enrollment id.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         int enrollmentId;
-        try { enrollmentId = Integer.parseInt(String.valueOf(enrollObj)); }
-        catch (Exception ex) { JOptionPane.showMessageDialog(this, "Invalid enrollment id.", "Error", JOptionPane.ERROR_MESSAGE); return; }
-
-        String component = String.valueOf(model.getValueAt(row, 3)).trim();
-        String scoreStr = String.valueOf(model.getValueAt(row, 4)).trim();
+        try { 
+            enrollmentId = Integer.parseInt(String.valueOf(enrollObject)); 
+        }
+        catch (Exception ex) { 
+            JOptionPane.showMessageDialog(this, "Invalid enrollment id.", "Error", JOptionPane.ERROR_MESSAGE); 
+            return; 
+        }
+        String component = String.valueOf(model.getValueAt(r, 3)).trim();
+        String scoreStr = String.valueOf(model.getValueAt(r, 4)).trim();
 
         if (component.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Choose a component.", "Missing", JOptionPane.WARNING_MESSAGE);
@@ -279,46 +268,60 @@ public class GradebookPanel extends JPanel {
         }
 
         boolean ok = upsertGradeInDb(enrollmentId, component, score);
-        if (ok) {
-            appendLog("Saved: enrollment " + enrollmentId + " — " + component + " = " + score);
-            loadStudents();
-        } else {
+        if (!ok) {
             appendLog("Save failed for enrollment " + enrollmentId);
             JOptionPane.showMessageDialog(this, "Failed to save grade.", "Error", JOptionPane.ERROR_MESSAGE);
+        } 
+        else {
+            appendLog("Saved: enrollment " + enrollmentId + " — " + component + " = " + score);
+            loadStudents();
         }
     }
 
     private void saveAllGrades() {
         if (!checkMaintenanceAndOwnership()) return;
-        int rows = model.getRowCount();
-        int saved = 0, skipped = 0;
-        for (int r = 0; r < rows; r++) {
-            Object enrollObj = model.getValueAt(r, 0);
-            if (enrollObj == null) { skipped++; continue; }
+        int row= model.getRowCount();
+        int saved=0; 
+        int skip=0;
+        for (int r=0; r < row; r++) {
+            Object enrollObj=model.getValueAt(r, 0);
+            if (enrollObj == null) { skip++; continue; }
             int enrollmentId;
             try { enrollmentId = Integer.parseInt(String.valueOf(enrollObj)); }
-            catch (Exception ex) { skipped++; continue; }
+            catch (Exception exception) { 
+                skip++; continue; 
+            }
 
             String component = String.valueOf(model.getValueAt(r, 3)).trim();
             String scoreStr = String.valueOf(model.getValueAt(r, 4)).trim();
-            if (component.isEmpty() || scoreStr.isEmpty()) { skipped++; continue; }
+            if (component.isEmpty() || scoreStr.isEmpty()) { skip++; continue; }
 
             BigDecimal score;
-            try { score = new BigDecimal(scoreStr); } catch (Exception ex) { skipped++; continue; }
+            try { 
+                score = new BigDecimal(scoreStr); 
+            } 
+                catch (Exception exception) { 
+                    skip++; continue; 
+                }
 
             BigDecimal compMax = componentMax.getOrDefault(component, new BigDecimal("100"));
-            if (score.compareTo(compMax) > 0) { appendLog("Row " + (r+1) + " skipped: > max (" + compMax + ")"); skipped++; continue; }
+            if (score.compareTo(compMax) > 0) { 
+                appendLog("Row " + (r+1) + " skipped: > max (" + compMax + ")"); skip++; 
+                continue; 
+            }
 
             boolean ok = upsertGradeInDb(enrollmentId, component, score);
-            if (ok) saved++; else skipped++;
+            if (!ok){ 
+                skip++;
+            } 
+            else{ 
+                 saved++;
+             }
         }
-        appendLog("Save All: saved=" + saved + " skipped=" + skipped);
+        appendLog("Save All: saved=" + saved + " skipped=" + skip);
         loadStudents();
     }
 
-    /**
-     * Upsert: if grade row exists for (enrollment_id, component) -> UPDATE else INSERT.
-     */
     private boolean upsertGradeInDb(int enrollmentId, String component, BigDecimal score) {
         String selectSql = "SELECT grade_id FROM grades WHERE enrollment_id = ? AND component = ?";
         String insertSql = "INSERT INTO grades (enrollment_id, component, score) VALUES (?, ?, ?)";
@@ -340,41 +343,54 @@ public class GradebookPanel extends JPanel {
                     ps.setBigDecimal(3, score);
                     return ps.executeUpdate() == 1;
                 }
-            } else {
+            } 
+            else {
                 try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                     ps.setBigDecimal(1, score);
                     ps.setInt(2, gradeId);
                     return ps.executeUpdate() == 1;
                 }
             }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+        } catch (SQLException exception) {
+            exception.printStackTrace();
             return false;
         }
     }
 
     private void finalizeSection() {
-        if (!checkMaintenanceAndOwnership()) return;
-        int confirm = JOptionPane.showConfirmDialog(this,
+        if (!checkMaintenanceAndOwnership()) {
+            return;
+        }
+        int confirm=JOptionPane.showConfirmDialog(this,
                 "Are you sure? Finalizing will prevent further edits.",
                 "Confirm Finalize", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) return;
+        if (confirm!=JOptionPane.YES_OPTION){ 
+            return;
+        }
 
-        boolean ok = instructorService.Finalize_Grade(sectionId);
-        if (ok) { appendLog("Section finalized."); loadStudents(); }
-        else { appendLog("Finalize failed."); JOptionPane.showMessageDialog(this, "Error finalizing.", "Error", JOptionPane.ERROR_MESSAGE); }
+        boolean ok=instructorService.Finalize_Grade(sectionId);
+        if (!ok) { 
+            appendLog("Finalize failed."); 
+            JOptionPane.showMessageDialog(this, "Error finalizing.", "Error", JOptionPane.ERROR_MESSAGE); 
+        }
+        else { 
+            appendLog("Section finalized."); 
+            loadStudents(); 
+        }
     }
 
     private void definalizeSection() {
-        if (!checkMaintenanceAndOwnership()) return;
+        if (!checkMaintenanceAndOwnership()) {
+            return;
+        }
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure? This will allow edits again.",
                 "Confirm Definalize", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) return;
-
-        // try service methods via reflection or direct call if available
-        String[] names = new String[]{"definalizeGrades","unfinalizeGrades","setFinalized"};
-        Exception lastEx = null;
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }    
+        String[] names=new String[]{"definalizeGrades","unfinalizeGrades","setFinalized"};
+        Exception lastEx=null;
         for (String n : names) {
             try {
                 if ("setFinalized".equals(n)) {
@@ -389,26 +405,29 @@ public class GradebookPanel extends JPanel {
                             if (res instanceof Boolean && (Boolean) res) { appendLog("Definalized via " + n); loadStudents(); return; }
                         } catch (NoSuchMethodException ignored2) { continue; }
                     }
-                } else {
+                } 
+                else {
                     java.lang.reflect.Method m = instructorService.getClass().getMethod(n, int.class);
                     Object res = m.invoke(instructorService, sectionId);
                     if (res instanceof Boolean && (Boolean) res) { appendLog("Definalized via " + n); loadStudents(); return; }
                 }
-            } catch (NoSuchMethodException nsme) {
+            } 
+            catch (NoSuchMethodException nsme) {
                 continue;
-            } catch (Exception ex) {
-                lastEx = ex;
+            } 
+            catch (Exception exception) {
+                lastEx = exception;
                 break;
             }
         }
-
-        if (lastEx != null) {
-            lastEx.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error during definalize: " + lastEx.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        } else {
+        if (lastEx == null) {
             JOptionPane.showMessageDialog(this,
                     "Definalize not supported by InstructorService. Implement definalizeGrades/unfinalizeGrades/setFinalized.",
                     "Not supported", JOptionPane.INFORMATION_MESSAGE);
+        } 
+        else {
+            lastEx.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error during definalize: " + lastEx.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

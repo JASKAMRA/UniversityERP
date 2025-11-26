@@ -1,36 +1,38 @@
 package edu.univ.erp.ui.common;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class BannerPanel extends JPanel {
-    private JLabel label;
+    private JLabel labels;
 
     public BannerPanel() {
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1, 30)); 
-        label = new JLabel(" "); //any text label
-        label.setFont(new Font("Arial", Font.BOLD, 14));  //changing the font
-        label.setOpaque(true); //adding opacity
-        label.setHorizontalAlignment(SwingConstants.CENTER);// adding allignment
-        label.setBorder(new EmptyBorder(5, 10, 5, 10)); //addnig border
-        add(label, BorderLayout.CENTER);
-        SetMantanence(false); // Set initial state
+        labels = new JLabel(" "); 
+        labels.setFont(new Font("Arial", Font.BOLD, 14));  
+        labels.setOpaque(true); 
+        labels.setHorizontalAlignment(SwingConstants.CENTER);
+        labels.setBorder(new EmptyBorder(5, 10, 5, 10)); 
+        add(labels, BorderLayout.CENTER);
+        SetMantanence(false); 
     }
 
+    private void setLabelText(JLabel label, String text) {
+    label.setText(text);
+}
     public void SetMantanence(boolean on) {
-        //if mantanence is ON then we have show the messages otherwise we dont have to show
-        if (!on) {
-            label.setText(" ");
-            label.setBackground(new Color(220, 220, 220));
-            label.setForeground(Color.BLACK);
-            ;
-        } else {
-            label.setText("⚠️Caution--- Sytem is under Maintenance Mode, You cannot do any Write operations!");
-            label.setBackground(new Color(180, 0, 0));
-            label.setForeground(Color.YELLOW); 
+        if (on) {
+            setLabelText(labels,"⚠️Caution--- Sytem is under Maintenance Mode, You cannot preform any Write operations!");
+            labels.setBackground(new Color(180, 0, 0));
+            labels.setForeground(Color.YELLOW); 
         }
+        else {
+            setLabelText(labels," ");
+            labels.setBackground(new Color(220, 220, 220));
+            labels.setForeground(Color.BLACK);
+            
+        } 
         revalidate(); 
         repaint();
     }

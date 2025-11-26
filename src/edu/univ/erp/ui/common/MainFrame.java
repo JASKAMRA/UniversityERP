@@ -108,8 +108,13 @@ public class MainFrame extends JFrame {
     public void show_to_user(CurrentUser user) {
         //stating mantenance false by default
         boolean maintenance=false;
+<<<<<<< HEAD
         maintenance=AccessControl.isMaintenanceOn();
         CurrentSession.get().SetMant(maintenance);
+=======
+        maintenance=AccessControl.isMaintenance();
+        CurrentSession.get().SetMantanence(maintenance);
+>>>>>>> e0ae67f994dd6e7c12018fdfd53df2b834a35722
         Main_banner.SetMantanence(maintenance);
 
         navigation.LoadMenu_forRole(user.GetRole());

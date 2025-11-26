@@ -1,73 +1,63 @@
 package edu.univ.erp.data.Dao;
-
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.domain.Admin;
-
 import java.sql.*;
 
-/**
- * DAO for minimal admins table stored in erp_student DB.
- */
 public class AdminDao {
-
-    /**
-     * Insert admin profile into erp_student.admins.
-     * On success sets generated adminId on the Admin object and returns true.
-     */
-    public boolean insert(Admin a) throws SQLException {
-        String sql = "INSERT INTO admins (user_id, name, email) VALUES (?, ?, ?)";
-        try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            ps.setString(1, a.GetUserId());
-            ps.setString(2, a.GetName());
-            ps.setString(3, a.GetEmail());
-
-            int rows = ps.executeUpdate();
-            if (rows == 1) {
-                try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) a.SetAdminId(rs.getInt(1));
-                }
-                return true;
-            }
-            return false;
-        }
+    private void setString(PreparedStatement prepStatement, int index, String value) throws SQLException {
+        prepStatement.setString(index, value);
     }
+     //Admin profile koh erp_student.admins mein insert krna  
+    public boolean insert(Admin admn) throws SQLException {
 
-    /**
-     * Find admin profile by user_id.
-     * Returns Admin object or null if not found.
-     */
+        String sql = "INSERT INTO admins (user_id, name, email) VALUES (?, ?, ?)";
+        try (Connection connect=DBConnection.getStudentConnection();
+             PreparedStatement prepstatement=connect.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                setString(prepstatement,1, admn.GetUserId());
+                setString(prepstatement,2, admn.GetName());
+                setString(prepstatement,3, admn.GetEmail());
+
+                int row=prepstatement.executeUpdate();
+                if (row==1) {
+                    try (ResultSet resultSet=prepstatement.getGeneratedKeys()) {
+                        if (resultSet.next()){
+                            admn.SetAdminId(resultSet.getInt(1));
+                        }
+                    }
+                    return true;
+                }
+                return false;
+             }
+    }
+      //by using user_id we will find admin profile
     public Admin findByUserId(String userId) throws SQLException {
-        String sql = "SELECT admin_id, user_id, name, email FROM admins WHERE user_id = ?";
-        try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        String sql="SELECT admin_id, user_id, name, email FROM admins WHERE user_id = ?";
+        try (Connection connect=DBConnection.getStudentConnection();
+             PreparedStatement prepstatement=connect.prepareStatement(sql)){
 
-            ps.setString(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Admin a = new Admin();
-                    a.SetAdminId(rs.getInt("admin_id"));
-                    a.SetUserId(rs.getString("user_id"));
-                    a.SetName(rs.getString("name"));
-                    a.SetEmail(rs.getString("email"));
-                    return a;
+            setString(prepstatement,1, userId);
+            try (ResultSet resultSet=prepstatement.executeQuery()) {
+                if (resultSet.next()){
+                    Admin admn=new Admin();
+                    admn.SetAdminId(resultSet.getInt("admin_id"));
+                    admn.SetUserId(resultSet.getString("user_id"));
+                    admn.SetName(resultSet.getString("name"));
+                    admn.SetEmail(resultSet.getString("email"));
+                    return admn;
                 }
             }
         }
         return null;
     }
-
-    /**
-     * Delete admin row by user_id. Returns true if deletion executed (rows >= 0).
-     */
-    public boolean deleteByUserId(String userId) throws SQLException {
-        String sql = "DELETE FROM admins WHERE user_id = ?";
-        try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId);
-            int rows = ps.executeUpdate();
-            return rows >= 0;
-        }
-    }
+    
+     // Delete admin row by user_id    
+    // public boolean deleteByUserId(String userId) throws SQLException {
+    //     String sql = "DELETE FROM admins WHERE user_id = ?";
+    //     try (Connection connect=DBConnection.getStudentConnection();
+    //          PreparedStatement prepstatement=connect.prepareStatement(sql)) {
+    //         setString(prepstatement,1, userId);
+    //         int row=prepstatement.executeUpdate();
+    //         return row>= 0;
+    //     }
+    // }
 }

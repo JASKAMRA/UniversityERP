@@ -15,31 +15,27 @@ public class Admin {
     public String GetUserId(){
          return userId; 
     }
-    public String GetName(){
-         return name; 
-    }
     public String GetEmail(){ 
         return email; 
+    }
+    public String GetName(){
+         return name; 
     }
 
     // Setter functions
     public void SetAdminId(int adminId){
-         this.adminId = adminId; 
+         this.adminId=adminId; 
     }
     public void SetUserId(String userId){ 
         this.userId = userId; 
     }
     public void SetName(String name){ 
-        this.name = name; 
+        this.name=name; 
     }
     public void SetEmail(String email){ 
-        this.email = email; 
+        this.email=email; 
     }
 
-    @Override
-    public String toString() {
-        return "Admin{" + "adminId=" + adminId + ", userId='" + userId + '\'' +
-               ", name='" + name + '\'' + ", email='" + email + '\'' + '}';
-    }
+   
 }
 

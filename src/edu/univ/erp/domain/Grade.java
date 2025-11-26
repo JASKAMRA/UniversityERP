@@ -39,29 +39,24 @@ public class Grade {
     // here are Setter functions
 
     public void setGradeId(Integer gradeId){
-         this.gradeId = gradeId; 
+         this.gradeId=gradeId; 
     }
     public void setEnrollmentId(Integer enrollmentId){ 
-        this.enrollmentId = enrollmentId; 
+        this.enrollmentId=enrollmentId; 
     }
     public void setComponent(String component){ 
-        this.component = component; 
+        this.component=component; 
     }
     public void setScore(Double score){ 
-        this.score = score; 
+        this.score=score; 
     }
     public void setFinalGrade(String finalGrade){ 
-        this.finalGrade = finalGrade; 
-    }
-    @Override
-    public String toString() {
-        return ("Grade{" +"gradeId=" + gradeId +", enrollmentId=" + enrollmentId +", component='" + component + '\'' +", score=" + score +", finalGrade='" + finalGrade + '}');
-                
+        this.finalGrade=finalGrade; 
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this != o) {
+        if (this!= o) {
             return true;
         }    
         if (!(o instanceof Grade)) {

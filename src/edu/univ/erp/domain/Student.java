@@ -10,7 +10,6 @@ public class Student {
     private String Roll_num;
     private int year;
     
-
     public Student(){}
 
     public Student(String student_id,String user_id,String Roll_num,String email,String name,String program,int year){
@@ -87,10 +86,4 @@ public class Student {
         return java.util.Objects.equals(user_id, u.user_id);
 
 }
-    public String tostring(){
-        String a="Student_Type{"+user_id+"-"+name+"}";
-        return(a);
-    }
-
-
 }

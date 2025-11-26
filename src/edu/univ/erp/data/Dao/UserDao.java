@@ -15,7 +15,7 @@ public void executeUpdate(PreparedStatement p)throws SQLException{
 }
 
     public void createUser(User u) throws SQLException {
-        String sql = "INSERT INTO users_auth (user_id, username, role, password_hash) VALUES (?, ?, ?, ?)";
+        String sql = "insert into users_auth (user_id, username, role, password_hash) VALUES (?, ?, ?, ?)";
         try (Connection connect = DBConnection.getAuthConnection();                                             //i have thrown SQL exception everywhere to catch errors
              PreparedStatement prepStatement = connect.prepareStatement(sql)) {
                 setStringg(prepStatement, u.GetID(),1);
@@ -28,7 +28,7 @@ public void executeUpdate(PreparedStatement p)throws SQLException{
 
 
 public void UPDATE_PASS(String ID, String New_Hash_recieved) throws SQLException {
-        String sql = "UPDATE users_auth SET password_hash = ? WHERE user_id = ?";
+        String sql = "update users_auth SET password_hash = ? WHERE user_id = ?";
         try (Connection connect = DBConnection.getAuthConnection();
              PreparedStatement prepStatement = connect.prepareStatement(sql)) {
                 setStringg(prepStatement, New_Hash_recieved,1);
@@ -40,7 +40,7 @@ public void UPDATE_PASS(String ID, String New_Hash_recieved) throws SQLException
 
 
    public User Find_From_Username(String username) throws SQLException {
-    String sql = "SELECT user_id, username, role, password_hash, status FROM users_auth WHERE username = ?";
+    String sql = "select User_id, Username, Role, Password_Hash, status From users_auth where Username = ?";
 
     try (Connection connect = DBConnection.getAuthConnection();
          PreparedStatement prepStatement = connect.prepareStatement(sql)) {
@@ -62,7 +62,7 @@ public void UPDATE_PASS(String ID, String New_Hash_recieved) throws SQLException
 
 
   public User Find_From_ID(String userId) throws SQLException {
-    String sql = "SELECT user_id, username, role, password_hash, status FROM users_auth WHERE user_id = ?";
+    String sql = "select user_id, username, role, password_hash, status from Users_auth WHERE user_id = ?";
 
     try (Connection connect = DBConnection.getAuthConnection();
         PreparedStatement prepStatement = connect.prepareStatement(sql)) {

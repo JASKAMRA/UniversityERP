@@ -18,16 +18,17 @@ public class SettingsDao {
         } 
 
     public void insert_into_settings(String key, String value) throws SQLException {
-        String sql = "INSERT INTO settings(`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)";
+        String sql = "insert INTO settings(`key`, `value`) values (?, ?) On Duplicate key update `value` = Values(`value`)";
         try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement prepStatement = conn.prepareStatement(sql)) {
             setStringg(prepStatement, key, 1);
             setStringg(prepStatement, value, 2);
             executeUpdate(prepStatement);
         }
-    }    
+    }  
+
     public Setting FindKey(String key) throws SQLException {
-        String sql="SELECT `key`, `value` FROM settings WHERE `key` = ?";
+        String sql="Select `key`, `value` from settings WHERE `key` = ?";
         try (Connection conn=DBConnection.getStudentConnection();
             PreparedStatement prepStatement=conn.prepareStatement(sql)) {
             setStringg(prepStatement, key, 1);
@@ -39,6 +40,7 @@ public class SettingsDao {
         }
         return null;
     }
+
     public boolean GetBooleanvalue(String key, boolean defaultValue)throws SQLException {
         Setting s=FindKey(key);
         if (s==null){

@@ -59,7 +59,7 @@ public class SectionDao {
     // }
 
     public List<Section> FindFromCourse(String courseId) throws SQLException {
-        String sql = "select section_id, course_id, instructor_id, day, days, start_time, end_time, capacity, semester, year " + "fROM sections WHERE course_id = ?";
+        String sql = "select section_id, Course_id, Instructor_id, Day, Days, Start_time, End_time, Capacity, Semester, Year " + "from sections WHERE course_id = ?";
         List<Section> out=new ArrayList<>();
         try (Connection connect=DBConnection.getStudentConnection();
              PreparedStatement prepStatement=connect.prepareStatement(sql)) {
@@ -71,7 +71,7 @@ public class SectionDao {
     }
 
     public Section FindFromID(int id) throws SQLException {
-        String sql="select section_id, course_id, instructor_id, day, days, start_time, end_time, capacity, semester, year " + "fROM sections WHERE section_id = ?";
+        String sql="Select section_id, Course_id, Instructor_id, Day, Days, Start_time, End_time, Capacity, Semester, Year " + "from sections WHERE section_id = ?";
         try (Connection connect=DBConnection.getStudentConnection();
              PreparedStatement prepStatement=connect.prepareStatement(sql)) {
                 setINT(prepStatement,id,1);
@@ -85,12 +85,9 @@ public class SectionDao {
     }
 
    
-    
-
-
     // public void updateSection(Section s) throws SQLException {
-    //     String sql = "UPDATE sections SET course_id = ?, instructor_id = ?, day = ?, days = ?, start_time = ?, end_time = ?, " +
-    //                  "capacity = ?, semester = ?, year = ? WHERE section_id = ?";
+    //     String sql = "UPDATE sections SET course_id = ?, Instructor_id = ?, Day = ?, Days = ?, Start_time = ?, End_time = ?, " +
+    //                  "Capacity = ?, Semester = ?, Year = ? where section_id = ?";
     //     try (Connection conn = DBConnection.getStudentConnection();
     //          PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -158,7 +155,7 @@ public class SectionDao {
 
 
     // public List<Section> getAllSections() throws SQLException {
-    //     String sql = "SELECT section_id, course_id, instructor_id, day, days, start_time, end_time, capacity, semester, year FROM sections ORDER BY course_id, section_id";
+    //     String sql = "SELECT section_id, course_id, Instructor_id, Day, Days, Start_time, End_time, Capacity, Semester, YEAR FROM sections ORDER BY course_id, section_id";
     //     List<Section> out = new ArrayList<>();
     //     try (Connection conn = DBConnection.getStudentConnection();
     //          PreparedStatement ps = conn.prepareStatement(sql);
@@ -182,8 +179,7 @@ public class SectionDao {
                 new_s.SetDay(DayOfWeek.valueOf(Day));
             } catch (IllegalArgumentException iae) {  
             }
-        }
-        
+        }    
         String Days_csv=resultSet.getString("days");
         if(Days_csv==null || Days_csv.isEmpty()){
              if (new_s.GetDay()==null) {
@@ -200,7 +196,6 @@ public class SectionDao {
         new_s.SetEndTime(End_T);
         new_s.SetStartTime(Start_T);
         
-
         int CAPAC=resultSet.getInt("capacity");
         if (!resultSet.wasNull()){
             new_s.SetCapacity(CAPAC);

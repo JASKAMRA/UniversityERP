@@ -1,8 +1,6 @@
 package edu.univ.erp.data.Dao;
-
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.domain.Student;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +15,7 @@ public void setINT(PreparedStatement p,int s,int i)throws SQLException{
         } 
 
  public boolean insertStudent(Student s) {
-        String sql = "INSERT INTO students (user_id, roll_no, name, mobile, year, program) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "insert INTO students (user_id, roll_no, name, mobile, year, program) VaLues (?, ?, ?, ?, ?, ?)";
         try (Connection conenct = DBConnection.getStudentConnection();
              PreparedStatement prepStatement = conenct.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             setStringg(prepStatement, s.GetID(), 1);            
@@ -44,7 +42,7 @@ public void setINT(PreparedStatement p,int s,int i)throws SQLException{
         }
     }
 public Student findByUserId(String userId) {
-        String sql="SELECT student_id, user_id, roll_no, name, mobile, year, program FROM students WHERE user_id = ?";
+        String sql="Select student_id, User_id, Roll_no, Name, mobile, year, program FROM students WHERE user_id = ?";
         try (Connection connect=DBConnection.getStudentConnection();
              PreparedStatement prepStatement=connect.prepareStatement(sql)) {
             setStringg(prepStatement, userId, 1); 
@@ -78,7 +76,7 @@ public Student findByUserId(String userId) {
 //         return null;
 //     }
 public boolean updateStudent(Student s) {
-        String sql="UPDATE students SET user_id = ?, roll_no = ?, name = ?, mobile = ?, year = ?, program = ? WHERE student_id = ?";
+        String sql="update students SET user_id = ?, roll_no = ?, Name = ?, Mobile = ?, Year = ?, program = ? WHERE student_id = ?";
         try (Connection connect=DBConnection.getStudentConnection();
              PreparedStatement prepStatement=connect.prepareStatement(sql)) {
             int Student_id=ParseInt(s.GetStudentID());

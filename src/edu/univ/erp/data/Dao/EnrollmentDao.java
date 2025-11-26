@@ -9,6 +9,9 @@ public class EnrollmentDao {
     private void setString(PreparedStatement prepStatement, int index, String value) throws SQLException {
         prepStatement.setString(index, value);
     }
+    private void executeUpdate(PreparedStatement p)throws SQLException{
+             p.executeUpdate();
+        }
     //Add a new enrollment  
     // public void enrollStudent(Enrollment enroll) throws SQLException {
     //     String sql = "INSERT INTO enrollments(student_id, section_id, status) VALUES (?, ?, ?)";
@@ -44,13 +47,18 @@ public class EnrollmentDao {
                         enroll.SetStatus(Status.valueOf(statusStr.toUpperCase()));
                     }
                     out.add(enroll);
-                }
-            }
-        }
-        return out;
+                }}}return(out);
     }
-
-
+    
+//Deletes an enrollment record
+public void deleteEnrollment(int id) throws SQLException {
+        String sql = "DELETE FROM enrollments WHERE enrollment_id = ?";
+        try (Connection connect=DBConnection.getStudentConnection();
+            PreparedStatement prepStatement=connect.prepareStatement(sql)) {
+            prepStatement.setInt(1, id);
+            executeUpdate(prepStatement);
+    }
+}
     //fetches and return single enrollment with its ID
     // public Enrollment findById(int id) throws SQLException {
     //     String sql = "SELECT enrollment_id, student_id, section_id, status FROM enrollments WHERE enrollment_id = ?";
@@ -85,14 +93,7 @@ public class EnrollmentDao {
     //     }
     // }
 
-    //Deletes an enrollment record
-    public void deleteEnrollment(int id) throws SQLException {
-    String sql = "DELETE FROM enrollments WHERE enrollment_id = ?";
-    try (Connection connect=DBConnection.getStudentConnection();
-         PreparedStatement prepStatement=connect.prepareStatement(sql)) {
-        prepStatement.setInt(1, id);
-        prepStatement.executeUpdate();
-    }
-}
+    
+    
 
 }

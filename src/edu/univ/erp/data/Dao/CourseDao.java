@@ -35,37 +35,21 @@ public class CourseDao {
             setString(prepStatement,1, courseId);
             try (ResultSet resultSet=prepStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    return new Course(
-                            resultSet.getString("department_id"),
-                            resultSet.getString("title"),
-                            resultSet.getString("course_id"),
-                            resultSet.getInt("credits")
-                            
-                    );
-                }
-            }
-        }
-        return null;
-    }
+                    return new Course(resultSet.getString("department_id"),resultSet.getString("title"),resultSet.getString("course_id"),resultSet.getInt("credits"));
+                }}}
+        return null;}
 
+    
     //finds and return all courses from the courses table
-
     public List<Course> findAll() throws SQLException {
-        String sql = "SELECT course_id, title, credits, department_id FROM courses";
+        String sql = "select course_id, title, credits, department_id FROM courses";
         List<Course> out=new ArrayList<>();
         try (Connection connect=DBConnection.getStudentConnection();
              PreparedStatement prepStatement=connect.prepareStatement(sql);
              ResultSet resultSet=prepStatement.executeQuery()) {
             while (resultSet.next()){
-                out.add(new Course(
-                            resultSet.getString("department_id"),
-                            resultSet.getString("title"),
-                            resultSet.getString("course_id"),
-                            resultSet.getInt("credits")
-                ));
-            }
-        }
-        return out;
+                out.add(new Course(resultSet.getString("department_id"),resultSet.getString("title"),resultSet.getString("course_id"),resultSet.getInt("credits")));
+            }}return(out);
     }
 
     // update the coourse using course_id

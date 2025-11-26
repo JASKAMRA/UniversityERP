@@ -1,145 +1,141 @@
 package edu.univ.erp.data.Dao;
-
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.domain.Instructor;
-
 import java.sql.*;
 
 public class InstructorDAO {
 
-    // Insert instructor; DB generates instructor_id (INT). Domain stores as String.
-    public boolean insertInstructor(Instructor ins) {
-        String sql = "INSERT INTO instructors (user_id, department, name, email) VALUES (?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getAuthConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            ps.setString(1, ins.GetUserID());
-            ps.setString(2, ins.GetDepartment());
-            ps.setString(3, ins.GetName());
-            ps.setString(4, ins.GetEmail());
-
-            int rows = ps.executeUpdate();
-            if (rows == 1) {
-                try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        int gen = rs.getInt(1);
-                        ins.SetID(String.valueOf(gen)); // domain's instructor_id stored as String
-                    }
-                }
-                return true;
-            }
-            return false;
-        } catch (SQLIntegrityConstraintViolationException ex) {
-            System.err.println("Instructor insert failed - constraint: " + ex.getMessage());
-            return false;
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            return false;
-        }
+    private void setString(PreparedStatement prepStatement, int index, String value) throws SQLException {
+        prepStatement.setString(index, value);
     }
+    // public boolean insertInstructor(Instructor ins) {
+    //     String sql = "INSERT INTO instructors (user_id, department, name, email) VALUES (?, ?, ?, ?)";
+    //     try (Connection connect=DBConnection.getAuthConnection();
+    //          PreparedStatement prepStatement = connect.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    //         setString(prepStatement,1, ins.GetUserID());
+    //         setString(prepStatement,2, ins.GetDepartment());
+    //         setString(prepStatement,3, ins.GetName());
+    //         setString(prepStatement,4, ins.GetEmail());
+    //         int rows=prepStatement.executeUpdate();
+    //         if (rows==1){
+    //             try (ResultSet resultSet=prepStatement.getGeneratedKeys()) {
+    //                 if (resultSet.next()){
+    //                     int gen=resultSet.getInt(1);
+    //                     ins.SetID(String.valueOf(gen)); 
+    //                 }
+    //             }
+    //             return true;
+    //         }
+    //         return false;
+    //     } catch (SQLIntegrityConstraintViolationException exception) {
+    //         System.err.println("Instructor insert failed - constraint: " + exception.getMessage());
+    //         return false;
+    //     } catch (SQLException except) {
+    //         except.printStackTrace();
+    //         return false;
+    //     }
+    // }
 
-    // Find by PK instructor_id (int). Returns Instructor or null if not found
-    public Instructor findById(int instructorId) {
-        String sql = "SELECT instructor_id, user_id, department, name, email FROM instructors WHERE instructor_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, instructorId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Instructor ins = mapRowToInstructor(rs);
-                    ins.SetID(String.valueOf(rs.getInt("instructor_id")));
-                    return ins;
-                }
-            }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        return null;
-    }
 
-    // Find by user_id. Returns Instructor or null if not found
+    // public Instructor findById(int instructorId) {
+    //     String sql = "SELECT instructor_id, user_id, department, name, email FROM instructors WHERE instructor_id = ?";
+    //     try (Connection connect=DBConnection.getAuthConnection();
+    //          PreparedStatement prepStatement=connect.prepareStatement(sql)) {
+    //         prepStatement.setInt(1, instructorId);
+    //         try (ResultSet resultSet=prepStatement.executeQuery()) {
+    //             if (resultSet.next()) {
+    //                 Instructor instructor=mapRowToInstructor(resultSet);
+    //                 instructor.SetID(String.valueOf(resultSet.getInt("instructor_id")));
+    //                 return instructor;
+    //             }
+    //         }
+    //     } catch (SQLException exception) {
+    //         exception.printStackTrace();
+    //     }
+    //     return null;
+    // }
+
+    
     public Instructor findByUserId(String userId) {
         String sql = "SELECT instructor_id, user_id, department, name, email FROM instructors WHERE user_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Instructor ins = mapRowToInstructor(rs);
-                    ins.SetID(String.valueOf(rs.getInt("instructor_id")));
-                    return ins;
+        try (Connection connect=DBConnection.getAuthConnection();
+             PreparedStatement prepStatement=connect.prepareStatement(sql)) {
+            setString(prepStatement,1, userId);
+            try (ResultSet resultSet=prepStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    Instructor instructor=mapRowToInstructor(resultSet);
+                    instructor.SetID(String.valueOf(resultSet.getInt("instructor_id")));
+                    return instructor;
                 }
             }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+        } catch (SQLException exception) {
+            exception.printStackTrace();
         }
         return null;
     }
 
-    // Update by PK (instructor_id)
-    public boolean updateInstructor(Instructor ins) {
-        String sql = "UPDATE instructors SET user_id = ?, department = ?, name = ?, email = ? WHERE instructor_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+  
+    // public boolean updateInstructor(Instructor instructor) {
+    //     String sql = "UPDATE instructors SET user_id = ?, department = ?, name = ?, email = ? WHERE instructor_id = ?";
+    //     try (Connection connect=DBConnection.getAuthConnection();
+    //          PreparedStatement prepStatement=connect.prepareStatement(sql)) {
 
-            ps.setString(1, ins.GetUserID());
-            ps.setString(2, ins.GetDepartment());
-            ps.setString(3, ins.GetName());
-            ps.setString(4, ins.GetEmail());
+    //         setString(prepStatement,1, instructor.GetUserID());
+    //         setString(prepStatement,2, instructor.GetDepartment());
+    //         setString(prepStatement,3, instructor.GetName());
+    //         setString(prepStatement,4, instructor.GetEmail());
+    //         int instruct_id = parseIntSafe(instructor.GetID());
+    //         prepStatement.setInt(5, instruct_id);
+    //         int rows=prepStatement.executeUpdate();
+    //         return rows==1;
+    //     } catch (SQLException exception) {
+    //         exception.printStackTrace();
+    //         return false;
+    //     }
+    // }
 
-            int iid = parseIntSafe(ins.GetID());
-            ps.setInt(5, iid);
-
-            int rows = ps.executeUpdate();
-            return rows == 1;
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            return false;
-        }
-    }
-
-    // Delete by PK
     public boolean deleteById(int instructorId) {
         String sql = "DELETE FROM instructors WHERE instructor_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, instructorId);
-            int rows = ps.executeUpdate();
-            return rows == 1;
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+        try (Connection connect=DBConnection.getAuthConnection();
+             PreparedStatement prepStatement=connect.prepareStatement(sql)) {
+            prepStatement.setInt(1, instructorId);
+            int row=prepStatement.executeUpdate();
+            return row==1;
+        } catch (SQLException exception) {
+            exception.printStackTrace();
             return false;
         }
     }
 
-    // Delete by user_id helper
-    public boolean deleteByUserId(String userId) {
-        String sql = "DELETE FROM instructors WHERE user_id = ?";
-        try (Connection conn = DBConnection.getAuthConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId);
-            int rows = ps.executeUpdate();
-            return rows >= 0;
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            return false;
-        }
-    }
+    // public boolean deleteByUserId(String userId) {
+    //     String sql = "DELETE FROM instructors WHERE user_id = ?";
+    //     try (Connection connect=DBConnection.getAuthConnection();
+    //          PreparedStatement prepStatement=connect.prepareStatement(sql)) {
+    //         setString(prepStatement,1, userId);
+    //         int row=prepStatement.executeUpdate();
+    //         return row>= 0;
+    //     } catch (SQLException exception) {
+    //         exception.printStackTrace();
+    //         return false;
+    //     }
+    // }
 
     private Instructor mapRowToInstructor(ResultSet rs) throws SQLException {
-        Instructor ins = new Instructor();
-        ins.SetUserID(rs.getString("user_id"));
-        ins.Setdepartment(rs.getString("department"));
-        ins.SetName(rs.getString("name"));
-        ins.SetEmail(rs.getString("email"));
-        return ins;
+        Instructor instructor=new Instructor();
+        instructor.SetUserID(rs.getString("user_id"));
+        instructor.Setdepartment(rs.getString("department"));
+        instructor.SetName(rs.getString("name"));
+        instructor.SetEmail(rs.getString("email"));
+        return instructor;
     }
 
-    private int parseIntSafe(String s) {
-        if (s == null || s.isEmpty()) return 0;
+    private int parseIntSafe(String s){
+        if (s.isEmpty() || s == null){
+            return 0;
+        }    
         try {
             return Integer.parseInt(s);
-        } catch (NumberFormatException ex) {
+        } catch (NumberFormatException exception) {
             return 0;
         }
     }

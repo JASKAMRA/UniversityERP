@@ -15,9 +15,6 @@ public class Section {
     private String StartTime;
     private String EndTime; 
     
-
-
-
     public Section(){}
 
     public Section(Integer section_id,String semester,String course_id,String instructor_id,Integer capacity,DayOfWeek Day,Integer year){
@@ -88,11 +85,11 @@ public class Section {
     public Integer GetCapacity(){
         return capacity;
     }
-    public Integer GetYear(){
-        return year;
-    }
     public DayOfWeek GetDay(){
         return Day;
+    }
+    public Integer GetYear(){
+        return year;
     }
     @Override
     public int hashCode(){
@@ -106,13 +103,7 @@ public class Section {
         if(!(object instanceof Section)){
             return false;
         }
-        
         Section u=(Section) object;
         return java.util.Objects.equals(section_id,u.section_id);
     }
-    public String tostring(){
-        String a="Section_Type{"+section_id+"("+course_id+")"+"-"+semester+"}";
-        return(a);
-    }
-    
 }

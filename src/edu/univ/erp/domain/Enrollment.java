@@ -24,24 +24,24 @@ public class Enrollment {
     public void SetStatus(Status status){
         this.status=status;
     }
-    public void SetStudentID(String id){
-        this.student_id=id;
-    }
     public void SetSectionID(int id){
         this.section_id=id;
+    }
+    public void SetStudentID(String id){
+        this.student_id=id;
     }
     //getter function
     public Integer GetEnrollmentID(){
         return(enrollment_id);
+    }
+    public int GetSectionID(){
+        return(section_id);
     }
     public Status GetStatus(){
         return(status);
     }
     public String GetStudentID(){
         return(student_id);
-    }
-    public int GetSectionID(){
-        return(section_id);
     }
 
     @Override

@@ -2,9 +2,6 @@ package edu.univ.erp.domain;
 
 import java.util.Objects;
 
-/**
- * Simple key-value application setting.
- */
 public class Setting {
     private String key;
     private String value;
@@ -12,8 +9,8 @@ public class Setting {
     public Setting() {}
 
     public Setting(String key, String value) {
-        this.key = key;
-        this.value = value;
+        this.key=key;
+        this.value=value;
     }
     //Getter fucntions
     public String getKey(){ 
@@ -24,20 +21,15 @@ public class Setting {
     }
     //Setter functions
     public void setKey(String key){
-         this.key = key; 
+         this.key=key; 
     }
     public void setValue(String value){ 
-        this.value = value; 
-    }
-
-    @Override
-    public String toString() {
-        return "Setting{" + "key='" + key + '\'' + ", value='" + value + '\'' + '}';
+        this.value=value; 
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o){ 
+        if (this==o){ 
             return true;
         }
         if (!(o instanceof Setting)) {

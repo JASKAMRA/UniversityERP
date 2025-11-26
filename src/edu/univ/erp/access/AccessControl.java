@@ -6,19 +6,26 @@ import edu.univ.erp.domain.Role;
 public class AccessControl {
     private static final SettingsDao settingsDao = new SettingsDao();
 
-    public static boolean isMaintenanceOn() {
+    public static boolean isMaintenance(){
         try {
             return settingsDao.getBoolean("maintenance.on", false);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } 
+        catch (Exception except) {
+            except.printStackTrace();
             return false;
         }
     }
 
     public static boolean isActionAllowed(Role role, boolean writeOperation) {
-        if (!writeOperation) return true;
-        if (!isMaintenanceOn()) return true;
-        if (role == Role.ADMIN) return true;
+        if (!writeOperation) {
+            return true;
+        }    
+        if (!isMaintenance()){ 
+            return true;
+        }    
+        if (role==Role.ADMIN){
+             return true;
+        }
         return false;
     }
 }

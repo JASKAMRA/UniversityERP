@@ -47,23 +47,23 @@ public class StudentServiceImpl implements StudentService {
     // COURSE CATALOG
     // ------------------------------------------------------
     @Override
-    public List<Course> getCourseCatalog() throws Exception {
+    public List<Course> GetCatalog() throws Exception {
         return courseDao.findAll();
     }
 
     @Override
-    public List<Section> getSectionsForCourse(String courseId) throws Exception {
-        return sectionDao.findByCourse(courseId);
+    public List<Section> GetSection(String courseId) throws Exception {
+        return sectionDao.FindFromCourse(courseId);
     }
 
     // ------------------------------------------------------
     // REGISTER FOR SECTION (transactional, capacity + duplicate + deadline checks)
     // ------------------------------------------------------
     @Override
-    public boolean registerForSection(String userId, int sectionId) throws Exception {
+    public boolean SecReg(String userId, int sectionId) throws Exception {
 
         // 🔥 Maintenance mode block
-        Role role = CurrentSession.get().getUser().getRole();
+        Role role = CurrentSession.get().getUsr().GetRole();
         if (!AccessControl.isActionAllowed(role, true)) {
             throw new IllegalStateException("System is in maintenance mode. Registration disabled.");
         }
@@ -168,7 +168,7 @@ public class StudentServiceImpl implements StudentService {
     // MY REGISTRATIONS TABLE (UI)
     // ------------------------------------------------------
     @Override
-    public List<Object[]> getMyRegistrations(String userId) throws Exception {
+    public List<Object[]> GetMyReg(String userId) throws Exception {
 
         Student st = studentDao.findByUserId(userId);
         if (st == null) return Collections.emptyList();
@@ -180,7 +180,7 @@ public class StudentServiceImpl implements StudentService {
 
         List<Object[]> rows = new ArrayList<>();
         for (Enrollment e : enrollments) {
-            Section sec = sectionDao.findById(e.GetSectionID());
+            Section sec = sectionDao.FindFromID(e.GetSectionID());
             if (sec == null) continue;
 
             Course c = courseDao.findById(sec.GetCourseID());
@@ -216,10 +216,10 @@ public class StudentServiceImpl implements StudentService {
     // DROP REGISTRATION
     // ------------------------------------------------------
     @Override
-    public boolean dropEnrollment(int enrollmentId) throws Exception {
+    public boolean DropEnroll(int enrollmentId) throws Exception {
 
         // 🔥 Maintenance mode block
-        Role role = CurrentSession.get().getUser().getRole();
+        Role role = CurrentSession.get().getUsr().GetRole();
         if (!AccessControl.isActionAllowed(role, true)) {
             throw new IllegalStateException("System is in maintenance mode. Drop disabled.");
         }
@@ -229,7 +229,7 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public List<Section> getTimetable(String userId) throws Exception {
+    public List<Section> getTimeTable(String userId) throws Exception {
 
         Student st = studentDao.findByUserId(userId);
         if (st == null) return Collections.emptyList();
@@ -240,7 +240,7 @@ public class StudentServiceImpl implements StudentService {
 
         List<Section> out = new ArrayList<>();
         for (Enrollment e : enrolls) {
-            Section s = sectionDao.findById(e.GetSectionID());
+            Section s = sectionDao.FindFromID(e.GetSectionID());
             if (s != null) out.add(s);
         }
 
@@ -276,9 +276,9 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public File generateTranscriptCsv(String userId) throws Exception {
+    public File GenerateCSV(String userId) throws Exception {
 
-        List<Object[]> regs = getMyRegistrations(userId);
+        List<Object[]> regs = GetMyReg(userId);
 
         File out = File.createTempFile("transcript_" + userId + "_", ".csv");
         try (PrintWriter pw = new PrintWriter(out)) {
@@ -343,7 +343,7 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public List<Object[]> getGrades(String userId) throws Exception {
+    public List<Object[]> getGrade(String userId) throws Exception {
 
         Student st = studentDao.findByUserId(userId);
         if (st == null) return Collections.emptyList();
@@ -384,7 +384,7 @@ public class StudentServiceImpl implements StudentService {
                 }
 
                 if (!any) {
-                    Section sec = sectionDao.findById(e.GetSectionID());
+                    Section sec = sectionDao.FindFromID(e.GetSectionID());
                     String courseId = sec == null ? "" : sec.GetCourseID();
                     rows.add(new Object[]{courseId, e.GetSectionID(), "", null, ""});
                 }
@@ -395,7 +395,7 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public String getInstructorNameForSection(Section section) throws Exception {
+    public String GetInstNameForSec(Section section) throws Exception {
         if (section == null) return "";
 
         String instrVal = section.GetInstructorID();

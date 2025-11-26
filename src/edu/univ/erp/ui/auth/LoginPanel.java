@@ -11,7 +11,7 @@ import edu.univ.erp.domain.Admin;
 import edu.univ.erp.domain.Role;
 import edu.univ.erp.ui.util.CurrentSession;
 import edu.univ.erp.ui.util.CurrentUser;
-import edu.univ.erp.ui.util.SettingsService;
+import edu.univ.erp.access.*;
 import edu.univ.erp.ui.util.UserProfile;
 
 import javax.swing.*;
@@ -132,7 +132,7 @@ public class LoginPanel extends JPanel {
                 MessageDialog.showError(this, Login_result.message);
                 return;
             }
-            boolean maintenance= SettingsService.isMaintenanceOn();
+            boolean maintenance= AccessControl.isMaintenanceOn();
             UserProfile Profile_on_UI;
             Object Profile_recieved= Login_result.profile;
 
@@ -168,8 +168,8 @@ public class LoginPanel extends JPanel {
 
 
             CurrentUser current_user = new CurrentUser(UserId, Role, Profile_on_UI);
-            CurrentSession.get().SetMantanence(maintenance);
-            CurrentSession.get().setUser(current_user);
+            CurrentSession.get().SetMant(maintenance);
+            CurrentSession.get().setUsr(current_user);
             
             main.show_to_user(current_user);
         } catch (Exception ex) {                  

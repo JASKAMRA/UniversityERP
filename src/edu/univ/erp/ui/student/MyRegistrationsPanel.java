@@ -108,7 +108,7 @@ public class MyRegistrationsPanel extends JPanel {
         SwingWorker<List<Object[]>, Void> w = new SwingWorker<>() {
             @Override
             protected List<Object[]> doInBackground() throws Exception {
-                return service.getMyRegistrations(userId);
+                return service.GetMyReg(userId);
             }
 
             @Override
@@ -192,7 +192,7 @@ public class MyRegistrationsPanel extends JPanel {
         SwingWorker<Boolean, Void> w = new SwingWorker<>() {
             @Override
             protected Boolean doInBackground() throws Exception {
-                return service.dropEnrollment(enrollmentId);
+                return service.DropEnroll(enrollmentId);
             }
 
             @Override

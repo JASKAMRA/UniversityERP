@@ -1,4 +1,4 @@
-package edu.univ.erp.tool;
+package edu.univ.erp.util;
 
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.data.Dao.AdminDao;

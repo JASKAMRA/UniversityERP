@@ -117,7 +117,7 @@ public class CourseCatalogPanel extends JPanel {
         SwingWorker<List<Course>, Void> w = new SwingWorker<>() {
             @Override
             protected List<Course> doInBackground() throws Exception {
-                return studentService.getCourseCatalog();
+                return studentService.GetCatalog();
             }
             @Override
             protected void done() {

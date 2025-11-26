@@ -1,21 +1,18 @@
 package edu.univ.erp.auth;
-
 import edu.univ.erp.data.Dao.UserDao;
 import edu.univ.erp.data.Dao.StudentDAO;
 import edu.univ.erp.data.Dao.InstructorDAO;
 import edu.univ.erp.data.Dao.AdminDao;
-
 import edu.univ.erp.domain.User;
 import edu.univ.erp.domain.Student;
 import edu.univ.erp.domain.Instructor;
 import edu.univ.erp.domain.Admin;
 
 public class AuthServiceBackend {
-
     private final UserDao userDao = new UserDao();
-    private final StudentDAO studentDao = new StudentDAO();
-    private final InstructorDAO instructorDao = new InstructorDAO();
-    private final AdminDao adminDao = new AdminDao();
+    private final StudentDAO Stu_DAO = new StudentDAO();
+    private final InstructorDAO I_dao = new InstructorDAO();
+    private final AdminDao a_Dao = new AdminDao();
 
     public static class LoginResult {
         public final boolean success;
@@ -23,80 +20,59 @@ public class AuthServiceBackend {
         public final User user;
         public final Object profile;
 
-        public LoginResult(boolean ok, String msg, User user, Object profile) {
-            this.success = ok;
+        public LoginResult(boolean login_res,String msg,User user,Object prof) {
+            this.success = login_res;
             this.message = msg;
             this.user = user;
-            this.profile = profile;
-        }
-
-        public static LoginResult ok(User user, Object profile) {
-            return new LoginResult(true, "OK", user, profile);
-        }
-
-        public static LoginResult fail(String msg) {
-            return new LoginResult(false, msg, null, null);
+            this.profile = prof;
         }
     }
 
-    public LoginResult login(String username, String plainPassword) {
+public LoginResult login(String username, String plainPassword) {
+
         try {
-            User u = userDao.findByUsername(username);
-            if (u == null)
-                return LoginResult.fail("Invalid username or password");
-
-            // status check
-            String status = u.GetStatus();
-            if (status != null && !"ACTIVE".equalsIgnoreCase(status)) {
-                return LoginResult.fail("Account status: " + status);
-            }
-
-            // verify password
-            boolean ok = PasswordUtil.verify(plainPassword, u.GetHashPass());
-            if (!ok)
-                return LoginResult.fail("Invalid username or password");
-
-            // load richer profile if present
-            Object profile = null;
-
-            try {
-                if (u.GetRole() != null) {
-
-                    switch (u.GetRole()) {
-
-                        case STUDENT: {
-                            Student st = studentDao.findByUserId(u.GetID());
-                            if (st != null)
-                                profile = st;
+            User user_ = userDao.Find_From_Username(username);              
+            if (user_==null){
+                return(new LoginResult(false,"Invalid Pass or username entered",null,null));}               
+                
+            String status = user_.GetStatus();
+            if (!"ACTIVE".equalsIgnoreCase(status)&&status!=null) {            
+                return(new LoginResult(false,"Account Not active!",null,null));
+            }                                                       
+            boolean login_res = PasswordUtil.verify(plainPassword, user_.GetHashPass());            
+            if (!login_res)
+                return(new LoginResult(false,"Invalid username or password!",null,null));            
+            Object profile=null;
+            try {if (user_.GetRole()!=null) {
+                 switch (user_.GetRole()) {
+                     case STUDENT:{
+                            Student st=Stu_DAO.findByUserId(user_.GetID());
+                            if (st!=null)
+                                profile=st;
                             break;
                         }
-
-                        case INSTRUCTOR: {
-                            Instructor ins = instructorDao.findByUserId(u.GetID());
-                            if (ins != null)
-                                profile = ins;
+                        case INSTRUCTOR:{
+                            Instructor ins=I_dao.findByUserId(user_.GetID());
+                            if (ins!=null)
+                                profile=ins;
                             break;
                         }
-
-                        case ADMIN: {
-                            Admin admin = adminDao.findByUserId(u.GetID());
-                            if (admin != null)
+                        case ADMIN:{
+                            Admin admin=a_Dao.findByUserId(user_.GetID());
+                            if (admin != null){
                                 profile = admin;
+                            }
                             break;
                         }
-
                         default:
                             profile = null;
                     }
                 }
-
             } catch (Exception ignored) {}
-
-            return LoginResult.ok(u, profile);
-
+            return new LoginResult(true,"OK",user_,profile);
         } catch (Exception ex) {
             ex.printStackTrace();
-            return LoginResult.fail("Authentication error: " + ex.getMessage());
+            return(new LoginResult(false,"Authentication error: " + ex.getMessage(),null,null));              
         }
     }
 }

@@ -109,26 +109,26 @@ public class MainFrame extends JFrame {
         //stating mantenance false by default
         boolean maintenance=false;
         maintenance=AccessControl.isMaintenanceOn();
-        CurrentSession.get().SetMantanence(maintenance);
+        CurrentSession.get().SetMant(maintenance);
         Main_banner.SetMantanence(maintenance);
 
-        navigation.LoadMenu_forRole(user.getRole());
-        Role userRole=user.getRole();
+        navigation.LoadMenu_forRole(user.GetRole());
+        Role userRole=user.GetRole();
 
         if (userRole==Role.INSTRUCTOR) {
             restartDashboard_Instructor(user);
         }
         else if (userRole==Role.STUDENT) {
-            ensureStudentCardsExist(user.getUserId());
+            ensureStudentCardsExist(user.GetUserID());
             //first we check that if students cards exist or not
             //then we add the dashboard of the student 
             StudentDashboardPanel dashboard=getPanel(StudentDashboardPanel.class, Card_Student_Dashboard);
             if (dashboard!=null){
-                dashboard.loadData(user.getProfile());
+                dashboard.loadData(user.GetProf());
             }
             Show_any_Card(Card_Student_Dashboard);
         } else if(userRole==Role.ADMIN){
-            ensureAdminCardsExist(user.getUserId());
+            ensureAdminCardsExist(user.GetUserID());
             //first we check that if admin exist or not
             //then we add the dashboard of the student 
             AdminDashboardPanel Dashboard=getPanel(AdminDashboardPanel.class,Card_Admin_Dashboard);
@@ -192,22 +192,22 @@ public class MainFrame extends JFrame {
                 DisplayArea.remove(c);
                 break; 
             } } 
-        InstructorDashboardPanel instructor_dashboard = new InstructorDashboardPanel(Instructor_Service, user.getUserId());
+        InstructorDashboardPanel instructor_dashboard = new InstructorDashboardPanel(Instructor_Service, user.GetUserID());
         String name_to_displayed;
-        if (user.getProfile()==null||user.getProfile().getName()== null) {
-            name_to_displayed=user.getUserId();     
+        if (user.GetProf()==null||user.GetProf().getNAAM()== null) {
+            name_to_displayed=user.GetUserID();     
         } else {
-            name_to_displayed=user.getProfile().getName(); 
+            name_to_displayed=user.GetProf().getNAAM(); 
         }
-        instructor_dashboard.loadData(user.getUserId(),name_to_displayed);
+        instructor_dashboard.loadData(user.GetUserID(),name_to_displayed);
         DisplayArea.add(instructor_dashboard, Card_Instructor_Dashboard);
         revalidate();
         repaint();
         Show_any_Card(Card_Instructor_Dashboard);
     }
     public void showInstDashboard() {
-        CurrentUser current_user = CurrentSession.get().getUser();
-        if (current_user==null||current_user.getRole()!=Role.INSTRUCTOR) {
+        CurrentUser current_user = CurrentSession.get().getUsr();
+        if (current_user==null||current_user.GetRole()!=Role.INSTRUCTOR) {
             JOptionPane.showMessageDialog(this, "Instructo was not logged in", "ERROR", JOptionPane.ERROR_MESSAGE);
             Show_any_Card(Card_Login);
             return;
@@ -223,8 +223,8 @@ public class MainFrame extends JFrame {
     }
 
     public void enableInstructorActions() {
-        CurrentUser current_user = CurrentSession.get().getUser();
-        if (current_user == null||current_user.getRole()!=Role.INSTRUCTOR) {
+        CurrentUser current_user = CurrentSession.get().getUsr();
+        if (current_user == null||current_user.GetRole()!=Role.INSTRUCTOR) {
             JOptionPane.showMessageDialog(this, "Instructor was not logged in ", "ERROR", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -260,7 +260,7 @@ public class MainFrame extends JFrame {
             Main_banner.SetMantanence(on);
         }
         if (CurrentSession.get() != null) {
-            CurrentSession.get().SetMantanence(on);
+            CurrentSession.get().SetMant(on);
         }
     }
 

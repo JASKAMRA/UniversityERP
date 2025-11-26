@@ -8,7 +8,7 @@ public class AccessControl {
 
     public static boolean isMaintenanceOn() {
         try {
-            return settingsDao.getBoolean("maintenance.on", false);
+            return settingsDao.GetBooleanvalue("maintenance.on", false);
         } catch (Exception ex) {
             ex.printStackTrace();
             return false;

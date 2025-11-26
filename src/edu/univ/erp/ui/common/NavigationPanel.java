@@ -118,8 +118,8 @@ public class NavigationPanel extends JPanel {
         
     }
     private void logout() {
-        CurrentSession.get().SetMantanence(false);
-        CurrentSession.get().setUser(null);
+        CurrentSession.get().SetMant(false);
+        CurrentSession.get().setUsr(null);
         main.togglemantainenceON(false); 
         LoadMenu_forRole(null);
         main.Show_any_Card(MainFrame.Card_Login);

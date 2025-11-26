@@ -1,46 +1,49 @@
 package edu.univ.erp.data.Dao;
-
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.domain.Setting;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/**
- * Key/value settings in erp_student DB.
- * table: settings(key VARCHAR PRIMARY KEY, value VARCHAR, updated_on DATETIME OPTIONAL)
- */
 public class SettingsDao {
+    public void setStringg(PreparedStatement p,String s,int i)throws SQLException{
+             p.setString(i, s);
+        }  
+    public void executeUpdate(PreparedStatement p)throws SQLException{
+             p.executeUpdate();
+        }
+    public void setINT(PreparedStatement p,int s,int i)throws SQLException{
+             p.setInt(i, s);
+        } 
 
-    public Setting findByKey(String key) throws SQLException {
-        String sql = "SELECT `key`, `value` FROM settings WHERE `key` = ?";
+    public void insert_into_settings(String key, String value) throws SQLException {
+        String sql = "INSERT INTO settings(`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)";
         try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, key);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return new Setting(rs.getString("key"), rs.getString("value"));
+             PreparedStatement prepStatement = conn.prepareStatement(sql)) {
+            setStringg(prepStatement, key, 1);
+            setStringg(prepStatement, value, 2);
+            executeUpdate(prepStatement);
+        }
+    }    
+    public Setting FindKey(String key) throws SQLException {
+        String sql="SELECT `key`, `value` FROM settings WHERE `key` = ?";
+        try (Connection conn=DBConnection.getStudentConnection();
+            PreparedStatement prepStatement=conn.prepareStatement(sql)) {
+            setStringg(prepStatement, key, 1);
+            try (ResultSet resultSet=prepStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new Setting(resultSet.getString("key"), resultSet.getString("value"));
                 }
             }
         }
         return null;
     }
-
-    public void upsert(String key, String value) throws SQLException {
-        String sql = "INSERT INTO settings(`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)";
-        try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, key);
-            ps.setString(2, value);
-            ps.executeUpdate();
+    public boolean GetBooleanvalue(String key, boolean defaultValue)throws SQLException {
+        Setting s=FindKey(key);
+        if (s==null){
+            return defaultValue;
         }
-    }
-
-    public boolean getBoolean(String key, boolean defaultValue) throws SQLException {
-        Setting s = findByKey(key);
-        if (s == null) return defaultValue;
-        return Boolean.parseBoolean(s.getValue());
+        return(Boolean.parseBoolean(s.getValue()));
     }
 }

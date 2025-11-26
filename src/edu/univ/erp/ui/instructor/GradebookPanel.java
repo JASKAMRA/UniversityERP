@@ -193,7 +193,7 @@ public class GradebookPanel extends JPanel {
         model.setRowCount(0);
         taLog.setText("");
         try {
-            List<Map<String,Object>> rows = instructorService.getStudentsInSection(sectionId);
+            List<Map<String,Object>> rows = instructorService.GetstuInSec(sectionId);
             if (rows == null) {
                 appendLog("No student rows returned.");
                 return;
@@ -227,14 +227,14 @@ public class GradebookPanel extends JPanel {
     }
 
     private boolean checkMaintenanceAndOwnership() {
-        Role role = CurrentSession.get().getUser().getRole();
+        Role role = CurrentSession.get().getUsr().GetRole();
         if (!AccessControl.isActionAllowed(role, true)) {
             JOptionPane.showMessageDialog(this,
                     "System is in maintenance mode. Write operations are disabled.",
                     "Maintenance ON", JOptionPane.WARNING_MESSAGE);
             return false;
         }
-        if (!instructorService.isInstructorOfSection(instructorUserId, sectionId)) {
+        if (!instructorService.IsInstructorIn(instructorUserId, sectionId)) {
             JOptionPane.showMessageDialog(this,
                     "Not your section.", "Permission denied", JOptionPane.ERROR_MESSAGE);
             return false;
@@ -360,7 +360,7 @@ public class GradebookPanel extends JPanel {
                 "Confirm Finalize", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
 
-        boolean ok = instructorService.finalizeGrades(sectionId);
+        boolean ok = instructorService.Finalize_Grade(sectionId);
         if (ok) { appendLog("Section finalized."); loadStudents(); }
         else { appendLog("Finalize failed."); JOptionPane.showMessageDialog(this, "Error finalizing.", "Error", JOptionPane.ERROR_MESSAGE); }
     }

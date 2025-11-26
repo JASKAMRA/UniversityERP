@@ -164,7 +164,7 @@ public class CreateStudentDialog extends JDialog {
         }
 
         try {
-            String userId = adminService.createStudentUser(username, password, fullName, email, roll, year, program);
+            String userId = adminService.CreateStuUser(username, password, fullName, email, roll, year, program);
             
             if (userId != null) {
                 succeeded = true;

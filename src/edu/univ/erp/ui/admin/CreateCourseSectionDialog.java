@@ -164,7 +164,7 @@ public class CreateCourseSectionDialog extends JDialog {
 
         try {
             // The core logic call to the AdminService remains unchanged
-            int secId = adminService.createCourseAndSection(courseId, title, credits, dept, capacity, day, sem, year, instructorUserId);
+            int secId = adminService.CreateCandS(courseId, title, credits, dept, capacity, day, sem, year, instructorUserId);
             
             if (secId > 0) {
                 succeeded = true;

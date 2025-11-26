@@ -1,14 +1,18 @@
 package edu.univ.erp.ui.util;
 
 public class UserProfile {
-    private String name;
-    private String email;
+    private String NAAM;
+    private String EMAIL;
 
-    public UserProfile(String name, String email) {
-        this.name = name;
-        this.email = email;
+    public UserProfile(String NAAM, String EMAIL) {
+        this.NAAM = NAAM;
+        this.EMAIL = EMAIL;
     }
 
-    public String getName() { return name; }
-    public String getEmail() { return email; }
+    public String getNAAM(){ 
+        return NAAM; 
+    }
+    public String getEMAIL(){
+     return EMAIL;
+    }
 }

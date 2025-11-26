@@ -118,7 +118,7 @@ public class ClassStatsPanel extends JPanel {
 
     public void loadStats() {
         // Ownership check
-        if (!instructorService.isInstructorOfSection(instructorUserId, sectionId)) {
+        if (!instructorService.IsInstructorIn(instructorUserId, sectionId)) {
             JOptionPane.showMessageDialog(this, "Not your section.", "Permission denied", JOptionPane.ERROR_MESSAGE);
             taDistribution.setText("Permission denied: You are not the instructor for this section.");
             return;

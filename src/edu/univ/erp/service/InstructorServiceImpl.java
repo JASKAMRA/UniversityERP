@@ -9,7 +9,7 @@ import java.util.*;
 public class InstructorServiceImpl implements InstructorService {
 
     @Override
-    public List<Map<String, Object>> getAssignedSections(String instructorUserId) {
+    public List<Map<String, Object>> GetAssgnSec(String instructorUserId) {
         List<Map<String,Object>> out = new ArrayList<>();
         String sql =
             "SELECT s.section_id, s.course_id, c.title AS course_title, s.day, s.capacity, s.semester, s.year " +
@@ -40,7 +40,7 @@ public class InstructorServiceImpl implements InstructorService {
     }
 
     @Override
-    public List<Map<String, Object>> getStudentsInSection(int sectionId) {
+    public List<Map<String, Object>> GetstuInSec(int sectionId) {
         List<Map<String,Object>> out = new ArrayList<>();
         String sql =
             "SELECT e.enrollment_id, st.student_id, st.roll_no, st.name, e.status " +
@@ -71,7 +71,7 @@ public class InstructorServiceImpl implements InstructorService {
   
 
     @Override
-    public boolean finalizeGrades(int sectionId) {
+    public boolean Finalize_Grade(int sectionId) {
         // For every enrollment in the section compute AVG(score) from grades (exclude component='FINAL' to avoid recursion)
         String enrollSql = "SELECT e.enrollment_id FROM enrollments e WHERE e.section_id = ?";
         String avgSql = "SELECT AVG(score) AS avg_score FROM grades g WHERE g.enrollment_id = ? AND g.component <> 'FINAL'";
@@ -142,7 +142,7 @@ public class InstructorServiceImpl implements InstructorService {
     }
 
         @Override
-    public boolean isInstructorOfSection(String instructorUserId, int sectionId) {
+    public boolean IsInstructorIn(String instructorUserId, int sectionId) {
         String sql = "SELECT 1 FROM sections s JOIN instructors i ON s.instructor_id = i.instructor_id WHERE s.section_id = ? AND i.user_id = ? LIMIT 1";
         try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -158,7 +158,7 @@ public class InstructorServiceImpl implements InstructorService {
     }
 
     @Override
-    public boolean isEnrollmentInSection(int enrollmentId, int sectionId) {
+    public boolean IsEnrollmentIn(int enrollmentId, int sectionId) {
         String sql = "SELECT 1 FROM enrollments WHERE enrollment_id = ? AND section_id = ? LIMIT 1";
         try (Connection conn = DBConnection.getStudentConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -176,7 +176,7 @@ public class InstructorServiceImpl implements InstructorService {
     // inside InstructorServiceImpl
 
 @Override
-public List<Map<String,Object>> getAllSections() {
+public List<Map<String,Object>> GetAllSec() {
     String sql = "SELECT s.section_id, s.course_id, c.title AS course_title, s.day, s.semester, s.year, s.capacity " +
                  "FROM sections s LEFT JOIN courses c ON s.course_id = c.course_id " +
                  "ORDER BY s.course_id, s.section_id";
@@ -203,7 +203,7 @@ public List<Map<String,Object>> getAllSections() {
 
 
 @Override
-public boolean saveGrade(int enrollmentId, String component, BigDecimal score) {
+public boolean Save_Grade(int enrollmentId, String component, BigDecimal score) {
     // refuse to save if FINAL already exists for this enrollment
     String checkFinal = "SELECT 1 FROM grades WHERE enrollment_id = ? AND component = 'FINAL' LIMIT 1";
     String insertSql = "INSERT INTO grades (enrollment_id, component, score, final_grade) VALUES (?, ?, ?, NULL)";

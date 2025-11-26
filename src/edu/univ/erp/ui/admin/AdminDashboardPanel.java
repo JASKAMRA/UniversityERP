@@ -107,8 +107,8 @@ public class AdminDashboardPanel extends JPanel {
         dialogue.setLocationRelativeTo(this);
         dialogue.setVisible(true);
         try {
-            boolean On=adminService.isMaintenanceOn();
-            CurrentSession.get().SetMantanence(On);
+            boolean On=adminService.IS_Maintenance_on();
+            CurrentSession.get().SetMant(On);
             if (MainFrame.getInstance()!=null) {
                 MainFrame.getInstance().togglemantainenceON(On);
             }
@@ -125,7 +125,7 @@ public class AdminDashboardPanel extends JPanel {
     public void LoadData() {
  
         try{
-            boolean On=adminService.isMaintenanceOn();
+            boolean On=adminService.IS_Maintenance_on();
             if(On){
                 LabelStatus.setText("Maintenance now ON");
             }else{

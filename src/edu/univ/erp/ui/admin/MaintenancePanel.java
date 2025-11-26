@@ -60,7 +60,7 @@ public class MaintenancePanel extends JPanel {
 
     private void refresh() {
         try {
-            boolean on = adminService.isMaintenanceOn();
+            boolean on = adminService.IS_Maintenance_on();
             
             // Update UI based on state
             if (on) {
@@ -89,14 +89,14 @@ public class MaintenancePanel extends JPanel {
     private void toggle() {
         btnToggle.setEnabled(false); // Disable during operation
         try {
-            boolean on = adminService.isMaintenanceOn(); // current state
+            boolean on = adminService.IS_Maintenance_on(); // current state
             boolean newState = !on; // flipped state
     
-            boolean ok = adminService.setMaintenance(newState);
+            boolean ok = adminService.Set_Maintenance(newState);
     
             if (ok) {
                 // Update session + banner with NEW state
-                CurrentSession.get().SetMantanence(newState);
+                CurrentSession.get().SetMant(newState);
                 // Note: MainFrame.getInstance() is checked externally in AdminDashboardPanel, 
                 // but we keep the call here if it is needed internally by this panel's use case.
                 if (MainFrame.getInstance() != null) {

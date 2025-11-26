@@ -98,7 +98,7 @@ public class GradesPanel extends JPanel {
             @Override
             protected List<Object[]> doInBackground() throws Exception {
                 // Assuming the service returns: [CourseTitle, SectionID, Component, Score, FinalGrade]
-                return studentService.getGrades(userId);
+                return studentService.getGrade(userId);
             }
 
             @Override

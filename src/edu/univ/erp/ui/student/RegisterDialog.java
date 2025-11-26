@@ -107,7 +107,7 @@ public class RegisterDialog extends JDialog {
         SwingWorker<List<Section>, Void> loader = new SwingWorker<>() {
             @Override
             protected List<Section> doInBackground() throws Exception {
-                return service.getSectionsForCourse(courseCode);
+                return service.GetSection(courseCode);
             }
             @Override
             protected void done() {
@@ -138,7 +138,7 @@ public class RegisterDialog extends JDialog {
                             }
 
                             String instr = "";
-                            try { instr = service.getInstructorNameForSection(s); } catch (Exception ex) { instr = "TBD"; }
+                            try { instr = service.GetInstNameForSec(s); } catch (Exception ex) { instr = "TBD"; }
 
                             String deadlineStr = regDeadline == null ? "No deadline" : sdf.format(new Date(regDeadline.getTime()));
                             String closedTag = closed ? " (CLOSED)" : "";
@@ -225,7 +225,7 @@ public class RegisterDialog extends JDialog {
             SwingWorker<Boolean, Void> reg = new SwingWorker<>() {
                 @Override
                 protected Boolean doInBackground() throws Exception {
-                    return service.registerForSection(userId, sectionId);
+                    return service.SecReg(userId, sectionId);
                 }
                 @Override
                 protected void done() {

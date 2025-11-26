@@ -2,8 +2,9 @@ package edu.univ.erp.service;
 
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.data.Dao.SettingsDao;
-
+import edu.univ.erp.access.AccessControl;
 import edu.univ.erp.auth.PasswordUtil;
+import edu.univ.erp.access.*;
 
 import java.sql.*;
 
@@ -12,9 +13,8 @@ public class AdminServiceImpl implements AdminService {
     private final SettingsDao settingsDao = new SettingsDao();
 
     @Override
-    public String createStudentUser(String username, String password, String fullName, String email,
-                                    String rollNo, Integer year, String program) throws SQLException {
-        if (username == null || password == null) return null;
+    public String CreateStuUser(String User_name, String pass, String Name, String EMAIL,String rollNo, Integer year, String program) throws SQLException {
+        if (User_name == null || pass == null) return null;
 
         String userId = null;
 
@@ -31,7 +31,7 @@ public class AdminServiceImpl implements AdminService {
             studentConn = DBConnection.getStudentConnection();
 
             try (PreparedStatement ch = authConn.prepareStatement("SELECT 1 FROM users_auth WHERE username = ? LIMIT 1")) {
-                ch.setString(1, username);
+                ch.setString(1, User_name);
                 try (ResultSet rs = ch.executeQuery()) {
                     if (rs.next()) {
                         return null;
@@ -40,11 +40,11 @@ public class AdminServiceImpl implements AdminService {
             }
 
             String generatedId = java.util.UUID.randomUUID().toString();
-            String pwHash = PasswordUtil.hash(password);
+            String pwHash = PasswordUtil.hash(pass);
 
             psAuth = authConn.prepareStatement(insertAuth);
             psAuth.setString(1, generatedId);
-            psAuth.setString(2, username);
+            psAuth.setString(2, User_name);
             psAuth.setString(3, "STUDENT");
             psAuth.setString(4, pwHash);
             psAuth.setString(5, "active");
@@ -57,7 +57,7 @@ public class AdminServiceImpl implements AdminService {
             psStudent = studentConn.prepareStatement(insertStudent, Statement.RETURN_GENERATED_KEYS);
             psStudent.setString(1, generatedId);
             psStudent.setString(2, rollNo);
-            psStudent.setString(3, fullName);
+            psStudent.setString(3, Name);
             psStudent.setString(4, null);
             if (year == null) psStudent.setNull(5, Types.INTEGER); else psStudent.setInt(5, year);
             psStudent.setString(6, program);
@@ -86,7 +86,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public int createCourseAndSection(String courseId, String courseTitle, Integer credits, String departmentId,
+    public int CreateCandS(String courseId, String courseTitle, Integer credits, String departmentId,
                                       int capacity, String day, String semester, int year,
                                       String instructorUserId) throws SQLException {
 
@@ -167,9 +167,9 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public boolean setMaintenance(boolean on) throws SQLException {
+    public boolean Set_Maintenance(boolean on) throws SQLException {
         try {
-            settingsDao.upsert("maintenance.on", Boolean.toString(on));
+            settingsDao.insert_into_settings("maintenance.on", Boolean.toString(on));
         } catch (SQLException ex) {
             ex.printStackTrace();
             return false;
@@ -204,7 +204,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public boolean isMaintenanceOn() throws SQLException {
-        return settingsDao.getBoolean("maintenance.on", false);
+    public boolean IS_Maintenance_on() throws SQLException {
+        return AccessControl.isMaintenanceOn();
     }
 }

@@ -171,7 +171,7 @@ public class CSVImportExportDialog extends JDialog {
         taLog.setText("Starting operation...\n");
 
         // 🔥 Maintenance Check
-        Role role = CurrentSession.get().getUser().getRole();
+        Role role = CurrentSession.get().getUsr().GetRole();
         if (!AccessControl.isActionAllowed(role, true)) {
             taLog.append("Operation denied: System in maintenance mode.\n");
             JOptionPane.showMessageDialog(this,
@@ -182,7 +182,7 @@ public class CSVImportExportDialog extends JDialog {
         }
 
         // 🔥 Ownership Check
-        if (!instructorService.isInstructorOfSection(instructorUserId, sectionId)) {
+        if (!instructorService.IsInstructorIn(instructorUserId, sectionId)) {
             taLog.append("Operation denied: Instructor does not own this section.\n");
             JOptionPane.showMessageDialog(this, "Not your section!", "Permission denied", JOptionPane.ERROR_MESSAGE);
             return;
@@ -275,7 +275,7 @@ public class CSVImportExportDialog extends JDialog {
                     BigDecimal score = scoreStr.isEmpty() ? null : new BigDecimal(scoreStr);
                     
                     // The core service call to save/update the grade
-                    boolean ok = instructorService.saveGrade(enrollmentId, comp, score);
+                    boolean ok = instructorService.Save_Grade(enrollmentId, comp, score);
                     
                     if (ok) {
                         successfulSaves++;

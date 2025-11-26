@@ -157,14 +157,14 @@ public class MySectionsPanel extends JPanel {
             
             try {
                 if (myOnly) {
-                    rows = instructorService.getAssignedSections(currentUserId);
+                    rows = instructorService.GetAssgnSec(currentUserId);
                 } else {
                     // Prefer getAllSections(); fallback to assignedSections if not implemented
                     try {
-                        rows = instructorService.getAllSections();
+                        rows = instructorService.GetAllSec();
                     } catch (AbstractMethodError | UnsupportedOperationException ame) {
                         // Fallback logic
-                        rows = instructorService.getAssignedSections(currentUserId);
+                        rows = instructorService.GetAssgnSec(currentUserId);
                         // Optional: Show warning that full list is unavailable
                         JOptionPane.showMessageDialog(this, "Full section list unavailable; defaulting to your assigned sections.", "Info", JOptionPane.INFORMATION_MESSAGE);
                         toggleMyOnly.setSelected(true); // Ensure toggle reflects actual data loaded
@@ -174,7 +174,7 @@ public class MySectionsPanel extends JPanel {
                 ex.printStackTrace();
                 // If anything goes wrong, try one last fallback to assigned sections
                 try {
-                    rows = instructorService.getAssignedSections(currentUserId);
+                    rows = instructorService.GetAssgnSec(currentUserId);
                 } catch (Exception ex2) {
                     ex2.printStackTrace();
                     JOptionPane.showMessageDialog(this, "Failed to load sections. Check DB connection.", "Error", JOptionPane.ERROR_MESSAGE);

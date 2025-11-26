@@ -84,7 +84,7 @@ public class StudentDashboardPanel extends JPanel {
     public void loadData(UserProfile profile) {
         this.profile = profile;
         if (profile != null) {
-            lblWelcome.setText("Welcome, " + profile.getName() + "!");
+            lblWelcome.setText("Welcome, " + profile.getNAAM() + "!");
             ensureCatalogPanel();
             contentLayout.show(contentPanel, CARD_EMPTY); // Show default card on initial load
         }
@@ -93,12 +93,12 @@ public class StudentDashboardPanel extends JPanel {
     private void ensureCatalogPanel() {
         if (catalogPanel == null) {
             // Get current user id from CurrentSession
-            CurrentUser cu = CurrentSession.get().getUser();
+            CurrentUser cu = CurrentSession.get().getUsr();
             if (cu == null) {
                 // Should not happen after successful login
                 return;
             }
-            String userId = cu.getUserId();
+            String userId = cu.GetUserID();
             catalogPanel = new CourseCatalogPanel(studentService, userId);
             contentPanel.add(catalogPanel, CARD_CATALOG);
         }

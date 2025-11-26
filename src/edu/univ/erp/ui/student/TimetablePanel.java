@@ -61,7 +61,7 @@ public class TimetablePanel extends JPanel {
      */
     public void loadTimetable() {
         try {
-            List<Section> secs = studentService.getTimetable(userId);
+            List<Section> secs = studentService.getTimeTable(userId);
             if (secs == null) secs = Collections.emptyList();
 
             // prepare map day -> list of display lines

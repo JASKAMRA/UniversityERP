@@ -3,27 +3,26 @@ package edu.univ.erp.ui.util;
 import edu.univ.erp.domain.Role;
 
 public class CurrentUser {
+    private final String userID;   
+    private final UserProfile prof;   
+    private final Role ROLE;
+    
 
-    private final String userId;      // CHANGED from long → String
-    private final Role role;
-    private final UserProfile profile;
-
-    // Updated constructor to match LoginPanel and AuthService
     public CurrentUser(String userId, Role role, UserProfile profile) {
-        this.userId = userId;
-        this.role = role;
-        this.profile = profile;
+        this.userID = userId;
+        this.ROLE = role;
+        this.prof = profile;
     }
 
-    public String getUserId() {
-        return userId;
+    public String GetUserID() {
+        return userID;
+    }
+    public UserProfile GetProf() {
+        return prof;
+    }
+    public Role GetRole() {
+        return ROLE;
     }
 
-    public Role getRole() {
-        return role;
-    }
-
-    public UserProfile getProfile() {
-        return profile;
-    }
+    
 }

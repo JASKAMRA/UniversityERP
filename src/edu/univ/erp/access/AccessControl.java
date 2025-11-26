@@ -8,16 +8,10 @@ public class AccessControl {
 
     public static boolean isMaintenance(){
         try {
-<<<<<<< HEAD
             return settingsDao.GetBooleanvalue("maintenance.on", false);
         } catch (Exception ex) {
             ex.printStackTrace();
-=======
-            return settingsDao.getBoolean("maintenance.on", false);
-        } 
-        catch (Exception except) {
-            except.printStackTrace();
->>>>>>> e0ae67f994dd6e7c12018fdfd53df2b834a35722
+            
             return false;
         }
     }

@@ -205,6 +205,6 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public boolean IS_Maintenance_on() throws SQLException {
-        return AccessControl.isMaintenanceOn();
+        return AccessControl.isMaintenance();
     }
 }

@@ -132,7 +132,7 @@ public class LoginPanel extends JPanel {
                 MessageDialog.showError(this, Login_result.message);
                 return;
             }
-            boolean maintenance= AccessControl.isMaintenanceOn();
+            boolean maintenance= AccessControl.isMaintenance();
             UserProfile Profile_on_UI;
             Object Profile_recieved= Login_result.profile;
 

@@ -48,7 +48,6 @@ public class MyRegistrationsPanel extends JPanel {
         title.setBorder(new EmptyBorder(0, 0, GAP, 0));
         add(title, BorderLayout.NORTH);
 
-        // CHANGED ------ Day → Days ------
         model = new DefaultTableModel(
                 new Object[]{"Enroll ID", "Course", "Section", "Days", "Semester", "Status"}, 0
         ) {
@@ -178,9 +177,10 @@ public class MyRegistrationsPanel extends JPanel {
             }
         }
 
+        // Plain-text confirmation (no HTML)
         int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "<html>Drop <b>" + courseName + "</b>?</html>",
+                "Drop " + courseName + "?",
                 "Confirm Drop",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE

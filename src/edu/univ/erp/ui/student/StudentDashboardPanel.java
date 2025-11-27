@@ -53,7 +53,7 @@ public class StudentDashboardPanel extends JPanel {
         lblWelcome.setFont(WELCOME_FONT);
         lblWelcome.setForeground(PRIMARY_COLOR);
         lblWelcome.setBorder(new EmptyBorder(0, PADDING, 0, PADDING));
-        
+
         top.add(lblWelcome, BorderLayout.WEST);
         add(top, BorderLayout.NORTH);
 
@@ -62,16 +62,31 @@ public class StudentDashboardPanel extends JPanel {
         contentPanel = new JPanel(contentLayout);
         contentPanel.setBackground(Color.WHITE);
 
-        // Add a default "Empty" screen (Improved aesthetic)
+        // Add a default "Empty" screen without HTML
         JPanel emptyPanel = new JPanel(new GridBagLayout());
         emptyPanel.setBackground(Color.WHITE);
-        
-        JLabel emptyMessage = new JLabel("<html><center>Welcome to your Student Dashboard.<br/>Please use the menu on the left to navigate and access your academic records.</center></html>");
-        emptyMessage.setFont(new Font("Arial", Font.PLAIN, 16));
-        emptyMessage.setForeground(Color.GRAY);
-        
-        emptyPanel.add(emptyMessage);
-        
+
+        // Create two plain JLabels stacked vertically and center-aligned
+        JPanel msgPanel = new JPanel();
+        msgPanel.setLayout(new BoxLayout(msgPanel, BoxLayout.Y_AXIS));
+        msgPanel.setBackground(Color.WHITE);
+
+        JLabel line1 = new JLabel("Welcome to your Student Dashboard.");
+        line1.setFont(new Font("Arial", Font.PLAIN, 16));
+        line1.setForeground(Color.GRAY);
+        line1.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel line2 = new JLabel("Please use the menu on the left to navigate and access your academic records.");
+        line2.setFont(new Font("Arial", Font.PLAIN, 14));
+        line2.setForeground(Color.GRAY);
+        line2.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        msgPanel.add(line1);
+        msgPanel.add(Box.createVerticalStrut(6));
+        msgPanel.add(line2);
+
+        emptyPanel.add(msgPanel);
+
         contentPanel.add(emptyPanel, CARD_EMPTY);
 
         // Add the content panel to the main layout

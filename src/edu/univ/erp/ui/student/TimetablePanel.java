@@ -5,6 +5,7 @@ import edu.univ.erp.service.StudentService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -12,8 +13,7 @@ import java.util.*;
 import java.util.List;
 
 /**
- * Very simple timetable: columns = days, each cell lists registered courses for that day
- * with their start-end times and section id.
+ * TimetablePanel without HTML: uses a JTextArea-based cell renderer to show multi-line cells.
  */
 public class TimetablePanel extends JPanel {
     private final StudentService studentService;
@@ -51,13 +51,18 @@ public class TimetablePanel extends JPanel {
 
         model = new DefaultTableModel();
         table = new JTable(model);
-        table.setRowHeight(120); // enough for multiple lines
+        table.setRowHeight(120); // initial guess; will be adjusted after filling data
         table.setEnabled(false);
+
+        // Use our multiline renderer for Object.class (applies to all columns)
+        table.setDefaultRenderer(Object.class, new MultiLineCellRenderer());
+
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
     /**
      * Loads student's registered sections and places them into the day columns.
+     * This version places plain text with '\n' for new lines and uses a JTextArea renderer.
      */
     public void loadTimetable() {
         try {
@@ -80,7 +85,7 @@ public class TimetablePanel extends JPanel {
                 for (String d : sectionDays) {
                     d = d.toUpperCase();
                     if (!map.containsKey(d)) {
-                        // ignore unknown days, or you could add them
+                        // ignore unknown days
                         continue;
                     }
                     map.get(d).add(line);
@@ -91,22 +96,30 @@ public class TimetablePanel extends JPanel {
             List<String> header = new ArrayList<>(DAYS);
             model = new DefaultTableModel(header.toArray(), 0);
 
-            // single row: each column cell contains HTML list of lines
+            // single row: each column cell contains plain text with newline separators
             Object[] row = new Object[header.size()];
             for (int i = 0; i < header.size(); i++) {
                 List<String> lines = map.get(header.get(i));
-                if (lines == null || lines.isEmpty()) row[i] = "";
-                else {
-                    StringBuilder sb = new StringBuilder("<html>");
-                    for (String L : lines) {
-                        sb.append(escapeHtml(L)).append("<br>");
+                if (lines == null || lines.isEmpty()) {
+                    row[i] = "";
+                } else {
+                    // join with newline — renderer will wrap correctly
+                    StringBuilder sb = new StringBuilder();
+                    for (int k = 0; k < lines.size(); k++) {
+                        sb.append(lines.get(k));
+                        if (k < lines.size() - 1) sb.append("\n");
                     }
-                    sb.append("</html>");
                     row[i] = sb.toString();
                 }
             }
             model.addRow(row);
             table.setModel(model);
+
+            // ensure the same multiline renderer remains set (model reset can change renderers)
+            table.setDefaultRenderer(Object.class, new MultiLineCellRenderer());
+
+            // adjust row height to fit tallest cell
+            adjustRowHeights();
 
             // nice widths
             int colCount = table.getColumnCount();
@@ -118,6 +131,66 @@ public class TimetablePanel extends JPanel {
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error loading timetable: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Adjust the table row height so that the multiline text fits.
+     * Works for single-row timetable (but also safe if multiple rows later).
+     */
+    private void adjustRowHeights() {
+        int rows = table.getRowCount();
+        for (int row = 0; row < rows; row++) {
+            int maxHeight = table.getRowHeight(); // start with current
+            for (int column = 0; column < table.getColumnCount(); column++) {
+                TableCellRenderer cellRenderer = table.getCellRenderer(row, column);
+                Component comp = table.prepareRenderer(cellRenderer, row, column);
+                comp.setSize(table.getColumnModel().getColumn(column).getWidth(), Integer.MAX_VALUE);
+                int prefHeight = comp.getPreferredSize().height + table.getIntercellSpacing().height;
+                maxHeight = Math.max(maxHeight, prefHeight);
+            }
+            if (table.getRowHeight(row) != maxHeight) {
+                table.setRowHeight(row, maxHeight);
+            }
+        }
+    }
+
+    /**
+     * Renderer that uses a JTextArea to display multiline content (line wrap).
+     */
+    private static class MultiLineCellRenderer extends JTextArea implements TableCellRenderer {
+        public MultiLineCellRenderer() {
+            setLineWrap(true);
+            setWrapStyleWord(true);
+            setOpaque(true);
+            setFont(new Font("Monospaced", Font.PLAIN, 12)); // you can change font
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus,
+                                                       int row, int column) {
+            if (value == null) {
+                setText("");
+            } else {
+                setText(String.valueOf(value));
+            }
+
+            // background/foreground styling
+            if (isSelected) {
+                setBackground(table.getSelectionBackground());
+                setForeground(table.getSelectionForeground());
+            } else {
+                // striped rows look: alternate background if you want
+                if (row % 2 == 0) setBackground(Color.WHITE);
+                else setBackground(new Color(250, 250, 250));
+                setForeground(Color.BLACK);
+            }
+
+            // set width to column width so preferredSize wraps properly
+            setSize(table.getColumnModel().getColumn(column).getWidth(), Short.MAX_VALUE);
+
+            return this;
         }
     }
 
@@ -162,9 +235,4 @@ public class TimetablePanel extends JPanel {
     }
 
     private String safeStr(Object o) { return o == null ? "" : String.valueOf(o); }
-
-    private String escapeHtml(String s) {
-        if (s == null) return "";
-        return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
-    }
 }

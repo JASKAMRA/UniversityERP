@@ -23,7 +23,7 @@ public class AdminDao {
                         }}return (true);
                     }return false;
              }}
-    public Admin findByUserId(String userId) throws SQLException {
+    public Admin FindFromUserID(String userId) throws SQLException {
         String sql="Select admin_id, user_id, name, email from ADMINS where user_id = ?";                    //by using user_id we will find admin profile
         try (Connection connect=DBConnection.getStudentConnection();
              PreparedStatement prepstatement=connect.prepareStatement(sql)){

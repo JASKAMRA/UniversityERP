@@ -8,9 +8,7 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.time.Year;
 
-/**
- * Dialog to create a course (if needed) and section assigned to an instructor (instructor's user_id).
- */
+
 public class CreateCourseSectionDialog extends JDialog {
     private final AdminService adminService;
     private JTextField tfCourseId, tfCourseTitle, tfCredits, tfDepartment;
@@ -28,7 +26,7 @@ public class CreateCourseSectionDialog extends JDialog {
         super(owner, "➕ Create Course & Section", ModalityType.APPLICATION_MODAL);
         this.adminService = adminService;
         init();
-        // Add padding around the whole dialog content
+     
         ((JPanel)getContentPane()).setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
         pack();
         setResizable(false);
@@ -37,15 +35,14 @@ public class CreateCourseSectionDialog extends JDialog {
     private void init() {
         setLayout(new BorderLayout(GAP, GAP));
 
-        // 1. Title (North)
+     
         JLabel title = new JLabel("Define New Course and Schedule Section");
         title.setFont(TITLE_FONT);
         add(title, BorderLayout.NORTH);
 
-        // 2. Main Form Panel (Center) - Divided into two sub-panels
-        JPanel mainForm = new JPanel(new GridLayout(1, 2, PADDING, 0)); // Two columns with horizontal padding
+        JPanel mainForm = new JPanel(new GridLayout(1, 2, PADDING, 0)); 
 
-        // --- Course Details Panel ---
+    
         JPanel coursePanel = createFormContainer("📚 Course Details");
         coursePanel.setBackground(Color.WHITE);
         
@@ -62,7 +59,7 @@ public class CreateCourseSectionDialog extends JDialog {
         
         mainForm.add(coursePanel);
 
-        // --- Section Details Panel ---
+        
         JPanel sectionPanel = createFormContainer("🗓️ Section Schedule & Instructor");
         sectionPanel.setBackground(Color.WHITE);
         
@@ -94,7 +91,7 @@ public class CreateCourseSectionDialog extends JDialog {
         bottom.add(btnCreate);
         add(bottom, BorderLayout.SOUTH);
 
-        // 4. Action Listeners
+  
         btnCancel.addActionListener(e -> { succeeded = false; setVisible(false); dispose(); });
         btnCreate.addActionListener(e -> doCreate());
     }

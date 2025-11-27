@@ -58,7 +58,7 @@ public LoginResult login(String username, String plainPassword) {
                             break;
                         }
                         case ADMIN:{
-                            Admin admin=a_Dao.findByUserId(user_.GetID());
+                            Admin admin=a_Dao.FindFromUserID(user_.GetID());
                             if (admin != null){
                                 profile = admin;
                             }

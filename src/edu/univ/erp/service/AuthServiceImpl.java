@@ -19,7 +19,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean changePassword(String username, String oldPassword, String newPassword) throws Exception {
-        if (username.trim().isEmpty()||username==null) {
+        if (username==null||username.trim().isEmpty()) {
             return false;
         }User user;
         try {

@@ -11,6 +11,31 @@ public class InstructorDAO {
     private void setINT(PreparedStatement prepStatement, int index, int value)throws SQLException{
         prepStatement.setInt(index, value);
     }
+
+    public boolean insertInstructor(Instructor ins) throws SQLException {
+    String sql = "INSERT INTO instructors (user_id, department, name, email) VALUES (?, ?, ?, ?)";
+    try (Connection connect = DBConnection.getStudentConnection();
+         PreparedStatement prepStatement = connect.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        prepStatement.setString(1, ins.GetUserID());
+        prepStatement.setString(2, ins.GetDepartment());
+        prepStatement.setString(3, ins.GetName());
+        prepStatement.setString(4, ins.GetEmail());
+        int rows = prepStatement.executeUpdate();
+        if (rows == 1) {
+            try (ResultSet rs = prepStatement.getGeneratedKeys()) {
+                if (rs.next()) {
+                    ins.SetID(String.valueOf(rs.getInt(1)));
+                }
+            }
+            return true;
+        }
+        return false;
+    } catch (SQLIntegrityConstraintViolationException e) {
+        System.err.println("Instructor insert failed - constraint: " + e.getMessage());
+        return false;
+    }
+}
+
   
     
     public Instructor findByUserId(String userId) {

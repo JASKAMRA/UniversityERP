@@ -105,6 +105,49 @@ public class AdminServiceImpl implements AdminService {
         settingsDao.updateMaintenance(on);
         return true;
     }
+    public boolean createInstructor(String username, String rawPassword, String name, String email, String department) {
+    UserDao userDao = new UserDao();            // or inject existing instance
+    InstructorDAO instructorDao = new InstructorDAO();
+
+    String newUserId = java.util.UUID.randomUUID().toString();
+    String pwHash = PasswordUtil.hash(rawPassword);
+
+    // 1) create auth user (auth_db)
+    User u = new User();
+    u.SetID(newUserId);
+    u.SetUsername(username);
+    u.SetHashPass(pwHash);
+    u.SetRole(Role.INSTRUCTOR); // ensure Role enum has INSTRUCTOR
+
+    try {
+        userDao.createUser(u);
+    } catch (SQLException ex) {
+        ex.printStackTrace();
+        return false;
+    }
+
+    // 2) create instructor row (student DB)
+    edu.univ.erp.domain.Instructor ins = new edu.univ.erp.domain.Instructor();
+    ins.SetUserID(newUserId);
+    ins.Setdepartment(department);
+    ins.SetName(name);
+    ins.SetEmail(email);
+
+    try {
+        boolean ok = instructorDao.insertInstructor(ins);
+        if (ok) return true;
+
+        // cleanup: remove created auth user if instructor insert failed
+        try { userDao.deleteById(newUserId); } catch (Exception ignore) {}
+        return false;
+    } catch (SQLException ex) {
+        ex.printStackTrace();
+        // cleanup
+        try { userDao.deleteById(newUserId); } catch (Exception ignore) {}
+        return false;
+    }
+}
+
 
     
 }

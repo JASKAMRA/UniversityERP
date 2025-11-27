@@ -323,39 +323,58 @@ public class GradebookPanel extends JPanel {
     }
 
     private boolean upsertGradeInDb(int enrollmentId, String component, BigDecimal score) {
-        String selectSql = "SELECT grade_id FROM grades WHERE enrollment_id = ? AND component = ?";
-        String insertSql = "INSERT INTO grades (enrollment_id, component, score) VALUES (?, ?, ?)";
-        String updateSql = "UPDATE grades SET score = ? WHERE grade_id = ?";
-        try (Connection conn = DBConnection.getStudentConnection()) {
-            Integer gradeId = null;
-            try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
+    String checkFinalSql = "SELECT 1 FROM grades WHERE enrollment_id = ? AND component = 'FINAL' LIMIT 1";
+    String selectSql = "SELECT grade_id FROM grades WHERE enrollment_id = ? AND component = ?";
+    String insertSql = "INSERT INTO grades (enrollment_id, component, score) VALUES (?, ?, ?)";
+    String updateSql = "UPDATE grades SET score = ? WHERE grade_id = ?";
+
+    try (Connection conn = DBConnection.getStudentConnection()) {
+        // 0) check if final exists for this enrollment -> disallow edits if present
+        try (PreparedStatement pCheckFinal = conn.prepareStatement(checkFinalSql)) {
+            pCheckFinal.setInt(1, enrollmentId);
+            try (ResultSet rs = pCheckFinal.executeQuery()) {
+                if (rs.next()) {
+                    // final exists -> disallow
+                    SwingUtilities.invokeLater(() -> {
+                        JOptionPane.showMessageDialog(GradebookPanel.this,
+                            "Grades are finalized for this student. Edit not allowed unless you definalize the section.",
+                            "Finalized", JOptionPane.ERROR_MESSAGE);
+                    });
+                    return false;
+                }
+            }
+        }
+
+        // proceed with upsert
+        Integer gradeId = null;
+        try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
+            ps.setInt(1, enrollmentId);
+            ps.setString(2, component);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) gradeId = rs.getInt("grade_id");
+            }
+        }
+
+        if (gradeId == null) {
+            try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
                 ps.setInt(1, enrollmentId);
                 ps.setString(2, component);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) gradeId = rs.getInt("grade_id");
-                }
+                ps.setBigDecimal(3, score);
+                return ps.executeUpdate() == 1;
             }
-
-            if (gradeId == null) {
-                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-                    ps.setInt(1, enrollmentId);
-                    ps.setString(2, component);
-                    ps.setBigDecimal(3, score);
-                    return ps.executeUpdate() == 1;
-                }
-            } 
-            else {
-                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-                    ps.setBigDecimal(1, score);
-                    ps.setInt(2, gradeId);
-                    return ps.executeUpdate() == 1;
-                }
+        } else {
+            try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                ps.setBigDecimal(1, score);
+                ps.setInt(2, gradeId);
+                return ps.executeUpdate() == 1;
             }
-        } catch (SQLException exception) {
-            exception.printStackTrace();
-            return false;
         }
+    } catch (SQLException exception) {
+        exception.printStackTrace();
+        return false;
     }
+}
+
 
     private void finalizeSection() {
         if (!checkMaintenanceAndOwnership()) {

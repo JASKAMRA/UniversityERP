@@ -88,7 +88,7 @@ public class TranscriptPanel extends JPanel {
             @Override
             protected File doInBackground() throws Exception {
                 // expected signature in service: File generateTranscriptCsv(String userId) throws Exception
-                return studentService.GenerateCSV(userId);
+                return studentService.CsvGeneration(userId);
             }
 
             @Override

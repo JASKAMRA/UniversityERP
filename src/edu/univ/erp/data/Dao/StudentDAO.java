@@ -14,33 +14,34 @@ public void setINT(PreparedStatement p,int s,int i)throws SQLException{
              p.setInt(i, s);
         } 
 
- public boolean insertStudent(Student s) {
-        String sql = "insert INTO students (user_id, roll_no, name, mobile, year, program) VaLues (?, ?, ?, ?, ?, ?)";
-        try (Connection conenct = DBConnection.getStudentConnection();
-             PreparedStatement prepStatement = conenct.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            setStringg(prepStatement, s.GetID(), 1);            
-            setStringg(prepStatement, s.GetRollNum(), 2);
-            setStringg(prepStatement, s.GetName(), 3);          
-            setStringg(prepStatement, s.GetEmail(), 4);   
-            setINT(prepStatement, s.GetYear(), 5);                   
-            setStringg(prepStatement, s.GetProgram(), 6);        
-            int R = prepStatement.executeUpdate();
-            if (R==1){
-                try (ResultSet resultSet = prepStatement.getGeneratedKeys()) {
-                    if (resultSet.next()) {
-                        int ge=resultSet.getInt(1);
-                        s.SetStudentID(String.valueOf(ge));
-                    }}
-                return true;
-            } return false;
-        } catch (SQLIntegrityConstraintViolationException ex) {
-            System.err.println("Student insertion failedd!!! " + ex.getMessage());
-            return false;
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            return false;
+ public int insertStudent(Student s) throws SQLException {
+    String sql = "INSERT INTO students (user_id, roll_no, name, mobile, year, program) VALUES (?, ?, ?, ?, ?, ?)";
+    int result = 0;
+
+    try (Connection connect = DBConnection.getStudentConnection();
+         PreparedStatement prepStatement = connect.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        setStringg(prepStatement, s.GetID(), 1);      
+        setStringg(prepStatement, s.GetRollNum(), 2); 
+        setStringg(prepStatement, s.GetName(), 3);   
+        setStringg(prepStatement, s.GetEmail(), 4);   
+        if (s.GetYear() == null) {
+            prepStatement.setNull(5, Types.INTEGER);
+        } else {
+            prepStatement.setInt(5, s.GetYear()); 
         }
-    }
+        setStringg(prepStatement, s.GetProgram(), 6); 
+        result = prepStatement.executeUpdate();
+        if (result == 1) {
+            try (ResultSet resultSet = prepStatement.getGeneratedKeys()) {
+                if (resultSet.next()) {
+                    int generatedKey = resultSet.getInt(1);
+                    s.SetStudentID(String.valueOf(generatedKey));}}}
+    } catch (SQLException e) {
+        System.err.println("Database error " + e.getMessage());
+        throw e; 
+    }return result;
+}
+
 public Student findByUserId(String userId) {
         String sql="Select student_id, User_id, Roll_no, Name, mobile, year, program FROM students WHERE user_id = ?";
         try (Connection connect=DBConnection.getStudentConnection();
@@ -58,23 +59,7 @@ public Student findByUserId(String userId) {
         }
         return null;
     }
-// public Student findById(int studentId) {
-//         String sql="SELECT student_id, user_id, roll_no, name, mobile, year, program FROM students WHERE student_id = ?";
-//         try (Connection cennect=DBConnection.getStudentConnection();
-//              PreparedStatement prepStatement=cennect.prepareStatement(sql)) {
-//             prepStatement.setInt(1, studentId);
-//             try (ResultSet rs=prepStatement.executeQuery()) {
-//                 if (rs.next()) {
-//                     Student s=mapRowToStudent(rs);
-//                     s.SetStudentID(String.valueOf(rs.getInt("student_id")));
-//                     return s;
-//                 }
-//             }
-//         } catch (SQLException ex) {
-//             ex.printStackTrace();
-//         }
-//         return null;
-//     }
+
 public boolean updateStudent(Student s) {
         String sql="update students SET user_id = ?, roll_no = ?, Name = ?, Mobile = ?, Year = ?, program = ? WHERE student_id = ?";
         try (Connection connect=DBConnection.getStudentConnection();
@@ -95,50 +80,7 @@ public boolean updateStudent(Student s) {
             return false;
         }
     }
-    // public boolean deleteById(int studentId) {
-    //     String sql = "DELETE FROM students WHERE student_id = ?";
-    //     try (Connection conn = DBConnection.getStudentConnection();
-    //          PreparedStatement ps = conn.prepareStatement(sql)) {
-    //         ps.setInt(1, studentId);
-    //         int rows = ps.executeUpdate();
-    //         return rows == 1;
-    //     } catch (SQLException ex) {
-    //         ex.printStackTrace();
-    //         return false;
-    //     }
-    // }
 
-
-    // public boolean deleteByUserId(String userId) {
-    //     String sql = "DELETE FROM students WHERE user_id = ?";
-    //     try (Connection conn = DBConnection.getStudentConnection();
-    //          PreparedStatement ps = conn.prepareStatement(sql)) {
-    //         ps.setString(1, userId);
-    //         int rows = ps.executeUpdate();
-    //         return rows >= 0;
-    //     } catch (SQLException ex) {
-    //         ex.printStackTrace();
-    //         return false;
-    //     }
-    // }
-
-
-    // public List<Student> findAll() {
-    //     String sql = "SELECT student_id, user_id, roll_no, name, mobile, year, program FROM students";
-    //     List<Student> out = new ArrayList<>();
-    //     try (Connection conn = DBConnection.getStudentConnection();
-    //          PreparedStatement ps = conn.prepareStatement(sql);
-    //          ResultSet rs = ps.executeQuery()) {
-    //         while (rs.next()) {
-    //             Student s = mapRowToStudent(rs);
-    //             s.SetStudentID(String.valueOf(rs.getInt("student_id")));
-    //             out.add(s);
-    //         }
-    //     } catch (SQLException ex) {
-    //         ex.printStackTrace();
-    //     }
-    //     return out;
-    // }
 private int ParseInt(String s1) {
             if(s1!=null&&!s1.isEmpty()){
             try {

@@ -6,6 +6,8 @@ import edu.univ.erp.data.Dao.CourseDao;
 import edu.univ.erp.data.Dao.EnrollmentDao;
 import edu.univ.erp.data.Dao.SectionDao;
 import edu.univ.erp.data.Dao.StudentDAO;
+import edu.univ.erp.data.Dao.GradeDao;
+import edu.univ.erp.data.Dao.InstructorDAO;
 
 import edu.univ.erp.domain.Course;
 import edu.univ.erp.domain.Enrollment;
@@ -18,20 +20,20 @@ import edu.univ.erp.domain.Role;
 import java.io.File;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Timestamp;
 import java.util.*;
 
-/**
- * StudentService implementation — handles catalog, registration, registrations listing and drop.
- */
+
 public class StudentServiceImpl implements StudentService {
 
     private final CourseDao courseDao = new CourseDao();
     private final SectionDao sectionDao = new SectionDao();
     private final EnrollmentDao enrollmentDao = new EnrollmentDao();
     private final StudentDAO studentDao = new StudentDAO();
+    private final GradeDao gradeDao = new GradeDao();
+    private final InstructorDAO instructorDao = new InstructorDAO();
 
-    // mapping day name -> order index for sorting timetable
     private static final Map<String, Integer> DAY_ORDER = new HashMap<>();
     static {
         DAY_ORDER.put("MONDAY", 1);
@@ -43,393 +45,242 @@ public class StudentServiceImpl implements StudentService {
         DAY_ORDER.put("SUNDAY", 7);
     }
 
-    // ------------------------------------------------------
-    // COURSE CATALOG
-    // ------------------------------------------------------
     @Override
-    public List<Course> GetCatalog() throws Exception {
+    public List<Section> GetSec(String courseId) throws Exception {
+        return sectionDao.FindFromCourse(courseId);
+    }
+    @Override
+    public List<Course> GetCat() throws Exception {
         return courseDao.findAll();
     }
 
-    @Override
-    public List<Section> GetSection(String courseId) throws Exception {
-        return sectionDao.FindFromCourse(courseId);
+   public boolean SecReg(String userId, int sectionId) throws Exception {
+    Role role = CurrentSession.get().getUsr().GetRole();
+    if (!AccessControl.isActionAllowed(role, true)) {
+        throw new IllegalStateException("You cant register, System is in Mantenance.");
     }
-
-    // ------------------------------------------------------
-    // REGISTER FOR SECTION (transactional, capacity + duplicate + deadline checks)
-    // ------------------------------------------------------
-    @Override
-    public boolean SecReg(String userId, int sectionId) throws Exception {
-
-        // 🔥 Maintenance mode block
-        Role role = CurrentSession.get().getUsr().GetRole();
-        if (!AccessControl.isActionAllowed(role, true)) {
-            throw new IllegalStateException("System is in maintenance mode. Registration disabled.");
-        }
-
-        // resolve user -> student_id
-        Student st = studentDao.findByUserId(userId);
-        if (st == null) {
-            System.err.println("[register] no student profile for userId=" + userId);
-            return false;
-        }
-        String studentId = st.GetStudentID();
-
-        // transactional register with row lock to prevent oversubscribe
-        try (Connection conn = DBConnection.getStudentConnection()) {
-            try {
-                conn.setAutoCommit(false);
-
-                // 1) lock section row to read capacity & deadline
-                String secSql = "SELECT capacity, registration_deadline FROM sections WHERE section_id = ? FOR UPDATE";
-                Integer capacity = null;
-                Timestamp regDeadline = null;
-                try (PreparedStatement ps = conn.prepareStatement(secSql)) {
-                    ps.setInt(1, sectionId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            conn.rollback();
-                            System.err.println("[register] section not found: " + sectionId);
-                            return false;
-                        }
-                        capacity = rs.getInt("capacity");
-                        if (rs.wasNull()) capacity = null;
-                        regDeadline = rs.getTimestamp("registration_deadline");
-                    }
-                }
-
-                // 2) check registration deadline if set
-                if (regDeadline != null) {
-                    Timestamp now = new Timestamp(System.currentTimeMillis());
-                    if (now.after(regDeadline)) {
-                        conn.rollback();
-                        System.err.println("[register] past registration deadline for section " + sectionId);
-                        return false;
-                    }
-                }
-
-                // 3) count current enrolled (active)
-                String countSql = "SELECT COUNT(*) FROM enrollments WHERE section_id = ? AND status IN ('ENROLLED','Confirmed','enrolled','confirmed')";
-                int enrolledCount = 0;
-                try (PreparedStatement ps = conn.prepareStatement(countSql)) {
-                    ps.setInt(1, sectionId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) enrolledCount = rs.getInt(1);
-                    }
-                }
-
-                if (capacity != null && enrolledCount >= capacity) {
-                    conn.rollback();
-                    System.err.println("[register] no seats left");
+    Student st = studentDao.findByUserId(userId);
+    if (st == null) {
+        System.err.println("[register] no student profile for userId=" + userId);
+        return false;
+    }
+    String studentId = st.GetStudentID();
+    try (Connection Connect = DBConnection.getStudentConnection()) {
+        try {Connect.setAutoCommit(false);
+            SectionDao.SectionCapacityDeadline CapDeadline=sectionDao.LocKCAPdeadline(Connect, sectionId);
+            if (CapDeadline==null) {
+                Connect.rollback();
+                System.err.println("[register] section not found: " + sectionId);
+                return false;
+            }
+            if (CapDeadline.RegDeadline!= null) {
+                if (new Timestamp(System.currentTimeMillis()).after(CapDeadline.RegDeadline)) {
+                    Connect.rollback();
+                    System.err.println("Section Register deadline has been passed " + sectionId);
                     return false;
                 }
-
-                // 4) duplicate check
-                String dupSql =
-                        "SELECT COUNT(*) FROM enrollments e " +
-                                "JOIN sections s ON e.section_id = s.section_id " +
-                                "WHERE e.student_id = ? AND (e.section_id = ? OR s.course_id = (SELECT course_id FROM sections WHERE section_id = ?))";
-                try (PreparedStatement ps = conn.prepareStatement(dupSql)) {
-                    ps.setString(1, studentId);
-                    ps.setInt(2, sectionId);
-                    ps.setInt(3, sectionId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next() && rs.getInt(1) > 0) {
-                            conn.rollback();
-                            System.err.println("[register] duplicate enrollment detected");
-                            return false;
-                        }
-                    }
-                }
-
-                // 5) insert
-                String insSql = "INSERT INTO enrollments (student_id, section_id, status) VALUES (?, ?, ?)";
-                try (PreparedStatement ps = conn.prepareStatement(insSql, Statement.RETURN_GENERATED_KEYS)) {
-                    ps.setString(1, studentId);
-                    ps.setInt(2, sectionId);
-                    ps.setString(3, "ENROLLED");
-                    ps.executeUpdate();
-                }
-
-                conn.commit();
-                return true;
-
-            } catch (Exception ex) {
-                try { conn.rollback(); } catch (Exception ignore) {}
-                throw ex;
-            } finally {
-                try { conn.setAutoCommit(true); } catch (Exception ignore) {}
             }
-        }
-    }
+            int enrolledCount=enrollmentDao.num_activeEnrol(Connect, sectionId);
+            if (CapDeadline.Cap != null&&enrolledCount>=CapDeadline.Cap) {
+                Connect.rollback();
+                System.err.println("[register] no seats left");
+                return false;
+            }
+            if (enrollmentDao.hasduplicateEnroll(Connect, studentId, sectionId)) {
+                Connect.rollback();
+                System.err.println("[register] duplicate enrollment detected");
+                return false;
+            }
+            if (enrollmentDao.insertingEnroll(Connect, studentId, sectionId, "ENROLLED") != 1) {
+                Connect.rollback();
+                System.err.println("[register] failed to insert enrollment");
+                return false;
+            }
+            Connect.commit();
+            return true;
+        } catch (Exception ex) {
+            try {Connect.rollback();} 
+            catch (Exception ex1) {}
+            throw ex;
+        } finally {
+            try { Connect.setAutoCommit(true); }
+            catch (Exception ex) {}
+        }}}
 
-    // ------------------------------------------------------
-    // MY REGISTRATIONS TABLE (UI)
-    // ------------------------------------------------------
     @Override
-    public List<Object[]> GetMyReg(String userId) throws Exception {
-
-        Student st = studentDao.findByUserId(userId);
-        if (st == null) return Collections.emptyList();
-
-        String studentId = st.GetStudentID();
-
-        List<Enrollment> enrollments = enrollmentDao.findByStudent(studentId);
-        if (enrollments == null || enrollments.isEmpty()) return Collections.emptyList();
-
-        List<Object[]> rows = new ArrayList<>();
-        for (Enrollment e : enrollments) {
-            Section sec = sectionDao.FindFromID(e.GetSectionID());
-            if (sec == null) continue;
-
-            Course c = courseDao.findById(sec.GetCourseID());
-            String courseId = (c != null) ? c.GetCourseID() : sec.GetCourseID();
-
-            // Use the new 'days' CSV field (instead of single day enum)
-            String daysCsv = null;
+    public List<Object[]> GetReg(String userId) throws Exception {
+    Student Stu1=studentDao.findByUserId(userId);
+    if (Stu1==null)
+        return Collections.emptyList();
+    String studentId=Stu1.GetStudentID();
+    List<Enrollment> enrollments=enrollmentDao.findByStudent(studentId);
+    if (enrollments==null||enrollments.isEmpty()) 
+        return Collections.emptyList();
+    List<Object[]> R=new ArrayList<>();
+    for (Enrollment e:enrollments) {
+        Section sec=sectionDao.FindFromID(e.GetSectionID());
+        if (sec==null) 
+            continue;
+        Course c=courseDao.findById(sec.GetCourseID());
+        String courseId=(c!=null) ? c.GetCourseID() : sec.GetCourseID();
+        String DaysCSV=sec.GetDays();
+        if (DaysCSV==null) {
             try {
-                daysCsv = sec.GetDays();
-            } catch (Exception ex) {
-                // fallback: if old API GetDay exists, use it
-                try {
-                    daysCsv = sec.GetDay() == null ? "" : sec.GetDay().name();
-                } catch (Exception ignore) {
-                    daysCsv = "";
-                }
+                DaysCSV=sec.GetDay() == null ? "" : sec.GetDay().name();
+            } catch (Exception ignore){
+                DaysCSV="";
             }
-            if (daysCsv == null) daysCsv = "";
-
-            rows.add(new Object[]{
-                    e.GetEnrollmentID(),
-                    courseId,
-                    sec.GetSectionID(),
-                    daysCsv,
-                    sec.GetSemester(),
-                    e.GetStatus() == null ? "" : e.GetStatus().name()
-            });
-        }
-        return rows;
+        }R.add(new Object[]{
+            e.GetEnrollmentID(),courseId,sec.GetSectionID(),
+            DaysCSV==null? "" : DaysCSV,
+            sec.GetSemester(),
+            e.GetStatus() == null ? "" : e.GetStatus().name()
+        });
     }
+    return R;
+}
 
-    // ------------------------------------------------------
-    // DROP REGISTRATION
-    // ------------------------------------------------------
-    @Override
-    public boolean DropEnroll(int enrollmentId) throws Exception {
-
-        // 🔥 Maintenance mode block
-        Role role = CurrentSession.get().getUsr().GetRole();
+@Override
+    public boolean looseEnroll(int enrollmentId) throws Exception {
+        Role role=CurrentSession.get().getUsr().GetRole();
         if (!AccessControl.isActionAllowed(role, true)) {
-            throw new IllegalStateException("System is in maintenance mode. Drop disabled.");
-        }
-
-        enrollmentDao.deleteEnrollment(enrollmentId);
+            throw new IllegalStateException("Cant drop when in Mantanence mode");
+        }enrollmentDao.deleteEnrollment(enrollmentId); 
         return true;
     }
 
-    @Override
-    public List<Section> getTimeTable(String userId) throws Exception {
-
-        Student st = studentDao.findByUserId(userId);
-        if (st == null) return Collections.emptyList();
-
-        String studentId = st.GetStudentID();
-        List<Enrollment> enrolls = enrollmentDao.findByStudent(studentId);
-        if (enrolls == null || enrolls.isEmpty()) return Collections.emptyList();
-
+@Override
+    public List<Section> getTimeTable(String UserID) throws Exception {
+        Student Stu=studentDao.findByUserId(UserID);
+        if (Stu==null) {
+            return Collections.emptyList();
+        }
+        String studentId=Stu.GetStudentID();
+        List<Enrollment> enrolls=enrollmentDao.findByStudent(studentId);
+        if (enrolls==null||enrolls.isEmpty()){
+             return Collections.emptyList();
+        }
         List<Section> out = new ArrayList<>();
         for (Enrollment e : enrolls) {
             Section s = sectionDao.FindFromID(e.GetSectionID());
             if (s != null) out.add(s);
         }
 
-        // Sort by: first day index (from days CSV) then start_time (HH:mm lexicographic)
         out.sort((a, b) -> {
-            String aDays = safeString(a.GetDays());
-            String bDays = safeString(b.GetDays());
-
-            String aFirst = firstDayFromCsv(aDays);
-            String bFirst = firstDayFromCsv(bDays);
-
-            int ai = DAY_ORDER.getOrDefault(aFirst.toUpperCase(), 999);
-            int bi = DAY_ORDER.getOrDefault(bFirst.toUpperCase(), 999);
-            if (ai != bi) return Integer.compare(ai, bi);
-
-            String aStart = safeString(a.GetStartTime());
-            String bStart = safeString(b.GetStartTime());
-            return aStart.compareTo(bStart);
-        });
-
-        return out;
+            String Aday = Check_string(a.GetDays());
+            String bday = Check_string(b.GetDays());
+            String bf = FirstDay_Csv(bday);
+            String af = FirstDay_Csv(Aday);
+            int ai = DAY_ORDER.getOrDefault(af.toUpperCase(), 999);
+            int bi = DAY_ORDER.getOrDefault(bf.toUpperCase(), 999);
+            if (ai!=bi) 
+                return Integer.compare(ai, bi);
+            String Ast = Check_string(a.GetStartTime());
+            String Bst = Check_string(b.GetStartTime());
+            return 
+            Ast.compareTo(Bst);
+        });return out;
     }
 
-    private static String safeString(String s) {
-        return s == null ? "" : s;
-    }
-
-    private static String firstDayFromCsv(String csv) {
-        if (csv == null) return "";
-        String[] parts = csv.split(",");
-        if (parts.length == 0) return "";
-        return parts[0].trim().toUpperCase();
-    }
-
-    @Override
-    public File GenerateCSV(String userId) throws Exception {
-
-        List<Object[]> regs = GetMyReg(userId);
-
-        File out = File.createTempFile("transcript_" + userId + "_", ".csv");
-        try (PrintWriter pw = new PrintWriter(out)) {
-            pw.println("Course,Section,Semester,Year,Component,Score,FinalGrade");
-
-            for (Object[] r : regs) {
-                Integer enrollId = (Integer) r[0];
-                String courseId = String.valueOf(r[1]);
-                Integer sectionId = (Integer) r[2];
-                String semester = String.valueOf(r[4]);
-
-                String sql = "SELECT component, score, final_grade FROM grades WHERE enrollment_id = ?";
-                try (Connection conn = DBConnection.getStudentConnection();
-                     PreparedStatement ps = conn.prepareStatement(sql)) {
-
-                    ps.setInt(1, enrollId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        boolean foundAny = false;
-
-                        while (rs.next()) {
-                            foundAny = true;
-                            String comp = rs.getString("component");
-                            BigDecimal score = rs.getBigDecimal("score");
-                            String fg = rs.getString("final_grade");
-
-                            pw.printf("%s,%d,%s,%s,%s,%s,%s%n",
-                                    escapeCsv(courseId),
-                                    sectionId,
-                                    escapeCsv(semester),
-                                    "",
-                                    escapeCsv(comp),
-                                    score == null ? "" : score.toPlainString(),
-                                    escapeCsv(fg)
-                            );
-                        }
-
-                        if (!foundAny) {
-                            pw.printf("%s,%d,%s,%s,%s,%s,%s%n",
-                                    escapeCsv(courseId),
-                                    sectionId,
-                                    escapeCsv(semester),
-                                    "",
-                                    "",
-                                    "",
-                                    ""
-                            );
-                        }
-                    }
-                }
-            }
-        }
-        return out;
-    }
-
-    private String escapeCsv(String s) {
-        if (s == null) return "";
-        if (s.contains(",") || s.contains("\"") || s.contains("\n")) {
-            s = s.replace("\"", "\"\"");
-            return "\"" + s + "\"";
-        }
-        return s;
-    }
-
-    @Override
-    public List<Object[]> getGrade(String userId) throws Exception {
-
-        Student st = studentDao.findByUserId(userId);
-        if (st == null) return Collections.emptyList();
-
-        String studentId = st.GetStudentID();
-        List<Enrollment> enrolls = enrollmentDao.findByStudent(studentId);
-
-        if (enrolls == null || enrolls.isEmpty()) return Collections.emptyList();
-
-        List<Object[]> rows = new ArrayList<>();
-
-        String sql =
-                "SELECT g.component, g.score, g.final_grade, s.course_id, s.section_id " +
-                        "FROM grades g " +
-                        "JOIN enrollments e ON g.enrollment_id = e.enrollment_id " +
-                        "JOIN sections s ON e.section_id = s.section_id " +
-                        "WHERE e.enrollment_id = ? ORDER BY g.grade_id";
-
-        try (Connection conn = DBConnection.getStudentConnection()) {
-            for (Enrollment e : enrolls) {
-                boolean any = false;
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setInt(1, e.GetEnrollmentID());
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            any = true;
-
-                            rows.add(new Object[]{
-                                    rs.getString("course_id"),
-                                    rs.getInt("section_id"),
-                                    rs.getString("component"),
-                                    rs.getBigDecimal("score"),
-                                    rs.getString("final_grade")
-                            });
-                        }
-                    }
-                }
-
-                if (!any) {
-                    Section sec = sectionDao.FindFromID(e.GetSectionID());
-                    String courseId = sec == null ? "" : sec.GetCourseID();
-                    rows.add(new Object[]{courseId, e.GetSectionID(), "", null, ""});
-                }
-            }
-        }
-
-        return rows;
-    }
-
-    @Override
-    public String GetInstNameForSec(Section section) throws Exception {
-        if (section == null) return "";
-
-        String instrVal = section.GetInstructorID();
-        if (instrVal == null || instrVal.trim().isEmpty()) return "";
-
-        try (Connection conn = DBConnection.getStudentConnection()) {
-
-            // Try numeric instructor_id (INT)
-            try {
-                int iid = Integer.parseInt(instrVal);
-                String q = "SELECT name FROM instructors WHERE instructor_id = ?";
-                try (PreparedStatement ps = conn.prepareStatement(q)) {
-                    ps.setInt(1, iid);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) return rs.getString("name");
-                    }
-                }
-            } catch (NumberFormatException nfe) {
-                // Fallback → user_id (VARCHAR)
-                String q2 = "SELECT name FROM instructors WHERE user_id = ?";
-                try (PreparedStatement ps2 = conn.prepareStatement(q2)) {
-                    ps2.setString(1, instrVal);
-                    try (ResultSet rs2 = ps2.executeQuery()) {
-                        if (rs2.next()) return rs2.getString("name");
-                    }
-                }
-            }
-
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+ private static String FirstDay_Csv(String csv) {
+        if (csv == null) 
             return "";
-        }
-
+        String[] parts=csv.split(",");
+        if(parts.length==0)
+             return "";
+        return parts[0].trim().toUpperCase();
+    }   
+private static String Check_string(String Str) {
+    if (Str != null) {
+        return Str; 
+    } else {
         return "";
     }
+}
+private String CsvEsc(String Str) {
+    if (Str == null) {
+        return "";
+    }
+    if (Str.contains(",") || Str.contains("\"") || Str.contains("\n")) {
+        String Safe_str = Str.replace("\"", "\"\"");
+        return "\"" + Safe_str + "\"";
+    }
+    return Str;
+}
+
+@Override
+public File CsvGeneration(String userId) throws Exception {
+    List<Object[]> registrations = GetReg(userId);
+    File out_file = File.createTempFile("transcript_" + userId + "_", ".csv");
+    try (PrintWriter printWriter = new PrintWriter(out_file)) {
+        printWriter.println("Course,Section,Semester,Year,Component,Score,FinalGrade");
+        for (Object[] registration : registrations) { 
+            Integer enrollmentId = (Integer) registration[0];
+            String courseId = String.valueOf(registration[1]);
+            Integer sectionId = (Integer) registration[2];
+            String semester = String.valueOf(registration[4]);
+            List<GradeDao.GradeRow> grades = gradeDao.getGradesForEnrollment(enrollmentId);
+            
+            String commonFormat="%s,%d,%s,%s";
+            if (grades== null||grades.isEmpty()) {
+                printWriter.printf(commonFormat + ",%s,%s,%s%n",
+                    CsvEsc(courseId),sectionId,CsvEsc(semester), 
+                    "", 
+                    "", 
+                    "", 
+                    "");
+            } else{
+                for(GradeDao.GradeRow gr:grades) {
+                    String scoreString=gr.SCORE==null? "" :gr.SCORE.toPlainString();
+                    printWriter.printf(commonFormat + ",%s,%s,%s%n",CsvEsc(courseId),sectionId,CsvEsc(semester),"",CsvEsc(gr.Comp),scoreString,CsvEsc(gr.Final_grd)
+                    );}}}}
+    
+    return out_file;
+}
+
+    
+@Override
+    public String GetInstName_sec(Section Sec) throws Exception {
+    if (Sec==null) {
+        return "";
+    }String instValue=Sec.GetInstructorID();
+    if (instValue==null||instValue.trim().isEmpty()){
+        return "";
+    } return instructorDao.Find_InstnameFROMid_user(instValue);
+}
+
+
+@Override
+    public List<Object[]> getGrade(String UserID) throws Exception {
+    Student Stu=studentDao.findByUserId(UserID);
+    if (Stu==null) {
+        return Collections.emptyList();
+    }
+    String StuID=Stu.GetStudentID();
+    List<Enrollment> Enroll=enrollmentDao.findByStudent(StuID);
+    if (Enroll==null||Enroll.isEmpty()) {
+        return Collections.emptyList();
+    }
+    List<Object[]> Res=new ArrayList<>();
+    for (Enrollment e : Enroll) {
+        int EnrollmentID=e.GetEnrollmentID();
+        List<GradeDao.GradeRow> g=gradeDao.getGradesForEnrollment(EnrollmentID);
+        if (g==null||g.isEmpty()) {
+            Section section=sectionDao.FindFromID(e.GetSectionID());
+            String courseId;
+            if (section==null) {
+                courseId="";
+            } else {
+                courseId=section.GetCourseID();
+            }
+            Res.add(new Object[]{
+                courseId,e.GetSectionID(),"",null,""});
+        } else {
+            for (GradeDao.GradeRow grade : g) {
+                Res.add(new Object[]{grade.CourseID,grade.SectionID,grade.Comp,grade.SCORE,grade.Final_grd});
+            }}}
+    return Res;
+}
+
 
 }

@@ -27,16 +27,16 @@ public void executeUpdate(PreparedStatement p)throws SQLException{
     }
 
 
-public void UPDATE_PASS(String ID, String New_Hash_recieved) throws SQLException {
-        String sql = "update users_auth SET password_hash = ? WHERE user_id = ?";
-        try (Connection connect = DBConnection.getAuthConnection();
-             PreparedStatement prepStatement = connect.prepareStatement(sql)) {
-                setStringg(prepStatement, New_Hash_recieved,1);
-                setStringg(prepStatement, ID,2);
-                executeUpdate(prepStatement);
-                
-        }
+public int UPDATE_PASS(String ID, String New_Hash_recieved) throws SQLException {
+    String sql = "update users_auth SET password_hash = ? WHERE user_id = ?";
+    try (Connection connect = DBConnection.getAuthConnection();
+         PreparedStatement prepStatement = connect.prepareStatement(sql)) {
+        setStringg(prepStatement, New_Hash_recieved, 1);
+        setStringg(prepStatement, ID, 2);
+        return prepStatement.executeUpdate();
     }
+}
+
 
 
    public User Find_From_Username(String username) throws SQLException {
@@ -59,6 +59,16 @@ public void UPDATE_PASS(String ID, String New_Hash_recieved) throws SQLException
     }
     return null;
 }
+
+public int deleteById(String userId) throws SQLException {
+    String sql="delete FROM users_auth WHERE user_id = ?";
+    try (Connection connect = DBConnection.getAuthConnection();
+         PreparedStatement prepStatement=connect.prepareStatement(sql)) {
+        setStringg(prepStatement, userId, 1);
+        return prepStatement.executeUpdate();
+    }
+}
+
 
 
   public User Find_From_ID(String userId) throws SQLException {

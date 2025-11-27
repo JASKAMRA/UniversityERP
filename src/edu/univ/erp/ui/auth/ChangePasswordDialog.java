@@ -1,131 +1,89 @@
 package edu.univ.erp.ui.auth;
-import edu.univ.erp.data.DBConnection;
-import edu.univ.erp.auth.PasswordUtil;
+
+import edu.univ.erp.service.AuthService;
+import edu.univ.erp.service.AuthServiceImpl;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 public class ChangePasswordDialog extends JDialog {
-    private final JTextField tfUsername=new JTextField(20);
-    private final JPasswordField pfOld=new JPasswordField(20);
-    private final JPasswordField pfNew=new JPasswordField(20);
-    private final JPasswordField pfConfirm= new JPasswordField(20);
-    private final JButton btnChange=new JButton("Change Password");
-    private final JButton btnCancel=new JButton("Cancel");
+    private final JTextField Username = new JTextField(20);
+    private final JPasswordField pass_old = new JPasswordField(20);
+    private final JPasswordField pass_new = new JPasswordField(20);
+    private final JPasswordField pass_confirm = new JPasswordField(20);
+    private final JButton change_button = new JButton("🔑-Change Password");
+    private final JButton cancel_button = new JButton("❌-Cancel");
 
-    public ChangePasswordDialog(Window owner) {
-        super(owner, "Change Password", ModalityType.APPLICATION_MODAL);
+    private final AuthService authService;
+    public ChangePasswordDialog(Window Master) {
+        this(Master,new AuthServiceImpl());
+    }
+    public ChangePasswordDialog(Window Master, AuthService authService) {
+        super(Master, "Change Password", ModalityType.APPLICATION_MODAL);
+        this.authService = authService;
         init();
         pack();
     }
+    private void ChangePass() {
+        String username = Username.getText().trim();
+        String Old_pass = new String(pass_old.getPassword());
+        String New_Pass = new String(pass_new.getPassword());
+        String Confirm_Pass = new String(pass_confirm.getPassword());
 
+        if (Old_pass.isEmpty()||Confirm_Pass.isEmpty()||New_Pass.isEmpty()||username.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill all", "Validation", JOptionPane.WARNING_MESSAGE);
+            return;}
+        if (New_Pass.length()<6 || !New_Pass.equals(Confirm_Pass)) {
+            if (!New_Pass.equals(Confirm_Pass)) {
+            JOptionPane.showMessageDialog(this, "New Pass and Confirm Pass are not same", "Validation", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+            JOptionPane.showMessageDialog(this, "New Pass must be 6 letters", "Validation", JOptionPane.WARNING_MESSAGE);
+            return;}
+        
+        
+        try {
+            boolean c=authService.changePassword(username, Old_pass, New_Pass);
+            if (c) {JOptionPane.showMessageDialog(this, "Password Changed Succesfully", "Success",JOptionPane.INFORMATION_MESSAGE);
+                    setVisible(false);
+                    dispose();
+                }else{JOptionPane.showMessageDialog(this, "Username not found or existing password incorrect.", "Error",JOptionPane.ERROR_MESSAGE);}
+        } catch(IllegalStateException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex2) {
+            ex2.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error: "+ex2.getMessage(), "Error",JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    
     private void init() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(new EmptyBorder(12,12,12,12));
-        GridBagConstraints c=new GridBagConstraints();
-        c.insets=new Insets(6,6,6,6);
-        c.fill=GridBagConstraints.HORIZONTAL;
-        c.anchor=GridBagConstraints.WEST;
+        panel.setBorder(new EmptyBorder(12, 12, 12, 12));
+        GridBagConstraints Constraints = new GridBagConstraints();
+        Constraints.insets = new Insets(6, 6, 6, 6); Constraints.fill = GridBagConstraints.HORIZONTAL; Constraints.anchor = GridBagConstraints.WEST;
 
-        int r = 0;
-        c.gridx = 0; c.gridy = r; panel.add(new JLabel("Username:"), c);
-        c.gridx = 1; panel.add(tfUsername, c); r++;
+        int w = 0; 
+        Constraints.gridx = 0; Constraints.gridy = w; panel.add(new JLabel("Username:"), Constraints);
+        Constraints.gridx = 1; panel.add(Username, Constraints); w++;
 
-        c.gridx = 0; c.gridy = r; panel.add(new JLabel("Existing password:"), c);
-        c.gridx = 1; panel.add(pfOld, c); r++;
+        Constraints.gridx = 0; Constraints.gridy = w; panel.add(new JLabel("Existing password:"),Constraints);
+        Constraints.gridx = 1; panel.add(pass_old, Constraints); w++;
+        Constraints.gridx = 0; Constraints.gridy = w; panel.add(new JLabel("New password:"),Constraints);
+        Constraints.gridx = 1; panel.add(pass_new, Constraints); w++;
+        Constraints.gridx = 0; Constraints.gridy = w; panel.add(new JLabel("Confirm new password:"),Constraints);
+        Constraints.gridx = 1; panel.add(pass_confirm, Constraints); w++;
 
-        c.gridx = 0; c.gridy = r; panel.add(new JLabel("New password:"), c);
-        c.gridx = 1; panel.add(pfNew, c); r++;
-
-        c.gridx = 0; c.gridy = r; panel.add(new JLabel("Confirm new password:"), c);
-        c.gridx = 1; panel.add(pfConfirm, c); r++;
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.add(btnCancel);
-        buttonPanel.add(btnChange);
+        JPanel Button_Panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        Button_Panel.add(cancel_button);Button_Panel.add(change_button);
 
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(panel, BorderLayout.CENTER);
-        getContentPane().add(buttonPanel, BorderLayout.SOUTH);
-
-        btnCancel.addActionListener(e -> {
-            setVisible(false);
-            dispose();
-        });
-
-        btnChange.addActionListener(e -> doChangePassword());
-        getRootPane().setDefaultButton(btnChange);
+        getContentPane().add(Button_Panel, BorderLayout.SOUTH);
+        cancel_button.addActionListener(e->{setVisible(false);dispose();});
+        change_button.addActionListener(e->ChangePass());
+        getRootPane().setDefaultButton(change_button);
     }
 
-        private void setString(PreparedStatement prepStatement, int index, String value) throws SQLException {
-        setString(prepStatement ,index, value);
-    }
-
-    private void doChangePassword() {
-        String username = tfUsername.getText().trim();
-        String oldPass = new String(pfOld.getPassword());
-        String newPass = new String(pfNew.getPassword());
-        String confirmPass = new String(pfConfirm.getPassword());  
-
-        if (oldPass.isEmpty() || username.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill all fields.","Validation",JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        if (!newPass.equals(confirmPass)) {
-            JOptionPane.showMessageDialog(this, "New password and confirmation do not match.", "Validation", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        if (newPass.length()<6) {
-            JOptionPane.showMessageDialog(this, "New password must be at least 6 characters.", "Validation", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-                
-        try (Connection connect=DBConnection.getAuthConnection()){
-            String q = "SELECT password_hash FROM users_auth WHERE username = ? LIMIT 1";
-            try (PreparedStatement prepStatement=connect.prepareStatement(q)) {
-                setString(prepStatement,1, username);
-                try (ResultSet resultSet=prepStatement.executeQuery()) {
-                    if (!resultSet.next()){
-                        JOptionPane.showMessageDialog(this, "Username not found.", "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    String storedHash=resultSet.getString("password_hash");
-                    if (storedHash==null || storedHash.isEmpty()) {
-                        JOptionPane.showMessageDialog(this, "No password set on the account. Contact admin.", "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    boolean ok=PasswordUtil.verify(oldPass, storedHash);
-                    if (!ok){
-                        JOptionPane.showMessageDialog(this, "Existing password does not match.", "Authentication failed", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
     
-                }
-            }
- 
-            String newHash=PasswordUtil.hash(newPass); 
-            String u="UPDATE users_auth SET password_hash = ? WHERE username = ?";
-            try (PreparedStatement prepStatement = connect.prepareStatement(u)){
-                setString(prepStatement,1, newHash);
-                setString(prepStatement,2, username);
-                int row=prepStatement.executeUpdate();
-                if (row==1){
-                    JOptionPane.showMessageDialog(this, "Password changed successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-                    setVisible(false);
-                    dispose();
-                } 
-                else{
-                    JOptionPane.showMessageDialog(this, "Failed to update password. Contact admin.", "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
 }
-

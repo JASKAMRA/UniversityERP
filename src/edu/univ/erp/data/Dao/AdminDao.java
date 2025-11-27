@@ -39,14 +39,5 @@ public class AdminDao {
                 }}}return null;
     }
     
-     // Delete admin row by user_id    
-    // public boolean deleteByUserId(String userId) throws SQLException {
-    //     String sql = "DELETE FROM admins WHERE user_id = ?";
-    //     try (Connection connect=DBConnection.getStudentConnection();
-    //          PreparedStatement prepstatement=connect.prepareStatement(sql)) {
-    //         setString(prepstatement,1, userId);
-    //         int row=prepstatement.executeUpdate();
-    //         return row>= 0;
-    //     }
-    // }
+    
 }

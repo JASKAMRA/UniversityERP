@@ -9,13 +9,16 @@ public class BannerPanel extends JPanel {
     public BannerPanel() {
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1, 30)); 
-        labels = new JLabel(" "); 
+        labels=new JLabel(" "); 
         labels.setFont(new Font("Arial", Font.BOLD, 14));  
         labels.setOpaque(true); 
         labels.setHorizontalAlignment(SwingConstants.CENTER);
         labels.setBorder(new EmptyBorder(5, 10, 5, 10)); 
-        add(labels, BorderLayout.CENTER);
+        add(labels,BorderLayout.CENTER);
         SetMantanence(false); 
+    }
+    private void SetBg(JLabel L, Color c){
+        L.setBackground(c);
     }
 
     private void setLabelText(JLabel label, String text) {
@@ -23,13 +26,13 @@ public class BannerPanel extends JPanel {
 }
     public void SetMantanence(boolean on) {
         if (on) {
-            setLabelText(labels,"⚠️Caution--- Sytem is under Maintenance Mode, You cannot preform any Write operations!");
-            labels.setBackground(new Color(180, 0, 0));
+            setLabelText(labels,"⚠️Caution!!!!  Sytem is under Maintenance Mode, You cannot preform any Write operations!");
+            SetBg(labels,new Color(180, 0, 0));
             labels.setForeground(Color.YELLOW); 
         }
         else {
             setLabelText(labels," ");
-            labels.setBackground(new Color(220, 220, 220));
+            SetBg(labels,new Color(220, 220, 220));
             labels.setForeground(Color.BLACK);
             
         } 

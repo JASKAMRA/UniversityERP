@@ -154,47 +154,56 @@ public class ClassStatsPanel extends JPanel {
             return;
         }
 
-        BigDecimal sum=BigDecimal.ZERO;
-        BigDecimal min=null; 
-        BigDecimal max = null;
-        Map<String, Integer> bucket=new HashMap<>();
-        bucket.put("A (90-100)", 0);
-        bucket.put("B (80-89)", 0);
-        bucket.put("C (70-79)", 0);
-        bucket.put("D (60-69)", 0);
-        bucket.put("F (0-59)", 0);
+        // ---------- replace your for-loop and avg/labels part with this ----------
+BigDecimal sum = BigDecimal.ZERO;
+BigDecimal min = null;
+BigDecimal max = null;
+Map<String, Integer> bucket=new HashMap<>();
+bucket.put("A (90-100)", 0);
+bucket.put("B (80-89)", 0);
+bucket.put("C (70-79)", 0);
+bucket.put("D (60-69)", 0);
+bucket.put("F (0-59)", 0);
 
-        for (int i = 0; i < n; i++) {
-            BigDecimal v = scores.get(i);
-            if (v == null) {
-                continue;
-            }        
-            sum = sum.add(v);
-            if ( v.compareTo(min) < 0||min == null ) {
-                min = v;
-            }
-            if ( v.compareTo(max) > 0 ||max == null ) max = v;
+for (int i = 0; i < n; i++) {
+    BigDecimal v = scores.get(i);
+    if (v == null) continue;
 
-            double dv = v.doubleValue();
-            if (dv >= 90) bucket.put("A (90-100)", bucket.get("A (90-100)") + 1);
-            else if (dv >= 80) bucket.put("B (80-89)", bucket.get("B (80-89)") + 1);
-            else if (dv >= 70) bucket.put("C (70-79)", bucket.get("C (70-79)") + 1);
-            else if (dv >= 60) bucket.put("D (60-69)", bucket.get("D (60-69)") + 1);
-            else bucket.put("F (0-59)", bucket.get("F (0-59)") + 1);
-        }
-        
-        BigDecimal avg = sum.divide(BigDecimal.valueOf(n), 2, BigDecimal.ROUND_HALF_UP);
-        lblCount.setText("<html><b style='font-size:14px;'>Students Graded:</b><br><span style='font-size:16px; color:#333;'>" + n + "</span></html>");
-        lblAvg.setText("<html><b style='font-size:14px;'>Class Average:</b><br><span style='font-size:16px; color:" + new Color(25, 135, 84).getRGB() + ";'>" + avg.toPlainString() + "%</span></html>");
-        lblMin.setText("<html><b style='font-size:14px;'>Minimum Score:</b><br><span style='font-size:16px;'>" + (min == null ? "-" : min.toPlainString()) + "%</span></html>");
-        lblMax.setText("<html><b style='font-size:14px;'>Maximum Score:</b><br><span style='font-size:16px;'>" + (max == null ? "-" : max.toPlainString()) + "%</span></html>");
-      
-        StringBuilder stringbuilder = new StringBuilder();
-        stringbuilder.append("Grade Distribution (Counts):\n\n");
-        bucket.keySet().stream().sorted().forEach(key -> {
-            stringbuilder.append(String.format("%s : %d%n", key, bucket.get(key)));
-        });
+    sum = sum.add(v);
 
-        taDistribution.setText(stringbuilder.toString());
+    // null-safe comparisons — check null first
+    if (min == null || v.compareTo(min) < 0) {
+        min = v;
+    }
+    if (max == null || v.compareTo(max) > 0) {
+        max = v;
+    }
+
+    double dv = v.doubleValue();
+    if (dv >= 90) bucket.put("A (90-100)", bucket.get("A (90-100)") + 1);
+    else if (dv >= 80) bucket.put("B (80-89)", bucket.get("B (80-89)") + 1);
+    else if (dv >= 70) bucket.put("C (70-79)", bucket.get("C (70-79)") + 1);
+    else if (dv >= 60) bucket.put("D (60-69)", bucket.get("D (60-69)") + 1);
+    else bucket.put("F (0-59)", bucket.get("F (0-59)") + 1);
+}
+
+// guard divide-by-zero and format average
+BigDecimal avg = BigDecimal.ZERO;
+if (n > 0) {
+    avg = sum.divide(BigDecimal.valueOf(n), 2, BigDecimal.ROUND_HALF_UP);
+}
+
+lblCount.setText("Count: " + n);
+lblAvg.setText("Average: " + avg.toPlainString() + "%");
+lblMin.setText("Min Score: " + (min == null ? "-" : min.toPlainString()) + "%");
+lblMax.setText("Max Score: " + (max == null ? "-" : max.toPlainString()) + "%");
+
+// build distribution text
+StringBuilder sb = new StringBuilder();
+sb.append("Grade Distribution (Counts):\n\n");
+bucket.keySet().stream().sorted().forEach(key -> sb.append(String.format("%s : %d%n", key, bucket.get(key))));
+taDistribution.setText(sb.toString());
+// -------------------------------------------------------------------------
+
     }
 }

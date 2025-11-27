@@ -132,10 +132,10 @@ public class LoginPanel extends JPanel {
                 MessageDialog.showError(this, Login_result.message);
                 return;
             }
+
             boolean maintenance= AccessControl.isMaintenance();
             UserProfile Profile_on_UI;
             Object Profile_recieved= Login_result.profile;
-
             if(Profile_recieved instanceof Student){
                 Student Stu=(Student) Profile_recieved;
                 Profile_on_UI=new UserProfile(Stu.GetName(),Stu.GetEmail());
@@ -144,20 +144,19 @@ public class LoginPanel extends JPanel {
                 Admin Stu=(Admin) Profile_recieved;
                 Profile_on_UI=new UserProfile(Stu.GetName(),Stu.GetEmail());
             }
-            else if(Profile_recieved instanceof Instructor){
-                Instructor Stu=(Instructor) Profile_recieved;
-                Profile_on_UI=new UserProfile(Stu.GetName(),Stu.GetEmail());
-            }
             else if(Login_result.user!=null){
                 User user =Login_result.user;
                 Profile_on_UI=new UserProfile(user.GetUsername(),user.GetEmail());
+            }
+            else if(Profile_recieved instanceof Instructor){
+                Instructor Stu=(Instructor) Profile_recieved;
+                Profile_on_UI=new UserProfile(Stu.GetName(),Stu.GetEmail());
             }
             else{
                 Profile_on_UI=new UserProfile(u,"");
             }
 
-            String UserId;
-            Role Role;
+String UserId; Role Role;
             if (Login_result.user!= null) {
                 UserId= Login_result.user.GetID();
                 Role= Login_result.user.GetRole();
@@ -165,12 +164,11 @@ public class LoginPanel extends JPanel {
                 UserId= null;
                 Role= null;
 }
-
             CurrentUser current_user = new CurrentUser(UserId, Role, Profile_on_UI);
             CurrentSession.get().SetMant(maintenance);
             CurrentSession.get().setUsr(current_user);
-            
             main.show_to_user(current_user);
+        
         } catch (Exception exception) {                  
             exception.printStackTrace();
             MessageDialog.showError(this,"Login error"+ exception.getMessage());

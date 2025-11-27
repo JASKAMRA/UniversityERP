@@ -8,7 +8,7 @@ public class Student {
     private String name;
     private String program;
     private String Roll_num;
-    private int year;
+    private Integer year;
     
     public Student(){}
 
@@ -34,7 +34,7 @@ public class Student {
     public void SetEmail(String email){
         this.email_id=email;
     }
-    public void SetYear(int year){
+    public void SetYear(Integer year){
         this.year=year;
     }
     public void SetProgram(String program){
@@ -57,7 +57,7 @@ public class Student {
     public String GetEmail(){
         return email_id;
     }
-    public int GetYear(){
+    public Integer GetYear(){
         return year;
     }
     public String  GetProgram(){

@@ -4,7 +4,9 @@ import edu.univ.erp.domain.Section;
 import java.sql.*;
 import java.time.DayOfWeek;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class SectionDao {
@@ -17,46 +19,74 @@ public class SectionDao {
     public void executeUpdate(PreparedStatement p)throws SQLException{
              p.executeUpdate();
         }
+    
+    public int createSection(Connection conn, String courseId, int instructorId, String day, int capacity, String semester, int year) throws SQLException {
+    String insertSection="INSERT INTO sections (course_id, instructor_id, day, capacity, semester, year, registration_deadline) VALUES (?, ?, ?, ?, ?, ?, NULL)";
+    try (PreparedStatement prepStatement= conn.prepareStatement(insertSection, Statement.RETURN_GENERATED_KEYS)) {
+        int idx = 1;
+        prepStatement.setString(idx++, courseId);
+        prepStatement.setInt(idx++, instructorId);
+        prepStatement.setString(idx++, day);
+        prepStatement.setInt(idx++, capacity);
+        prepStatement.setString(idx++, semester);
+        prepStatement.setInt(idx++, year);
+        int result=prepStatement.executeUpdate();
+        if (result!=1){
+            return -1;
+        }
+        try (ResultSet keys=prepStatement.getGeneratedKeys()) {
+            if (keys.next()){
+                return keys.getInt(1);
+            }
+        }return -1;
+    }
+}
+public List<Map<String,Object>> FindSec_for_Inst(String instructorUserId) throws SQLException {
+    String sql ="SELECT s.section_id, s.course_id, c.title AS course_title, s.day, s.capacity, s.semester, s.year " +"FROM sections s " +"JOIN courses c ON s.course_id = c.course_id " +"JOIN instructors i ON s.instructor_id = i.instructor_id " +"WHERE i.user_id = ?";
+    List<Map<String,Object>> out=new ArrayList<>();
+    try (Connection Connect = DBConnection.getStudentConnection();
+         PreparedStatement PrepStatement = Connect.prepareStatement(sql)) {
+        setStringg(PrepStatement,instructorUserId,1);
+        try (ResultSet ResultSet=PrepStatement.executeQuery()) {
+            while (ResultSet.next()) {
+                Map<String,Object> Map=new HashMap<>();
+                Map.put("section_id", ResultSet.getInt("section_id"));Map.put("course_id", ResultSet.getString("course_id"));Map.put("course_title", ResultSet.getString("course_title"));
+                Map.put("day", ResultSet.getString("day"));Map.put("capacity", ResultSet.getInt("capacity"));Map.put("semester", ResultSet.getString("semester"));Map.put("year", ResultSet.getInt("year"));
+                out.add(Map);
+            }
+        }
+    }
+    return out;
+}
+
+public boolean IsInstinSec(String instructorUserId, int sectionId) throws SQLException {
+    String sql="select 1 FROM sections s JOIN instructors i ON s.instructor_id = i.instructor_id WHERE s.section_id = ? AND i.user_id = ? LIMIT 1";
+    try (Connection connect=DBConnection.getStudentConnection();
+        PreparedStatement PrepStatement=connect.prepareStatement(sql)) {
+        setINT(PrepStatement, sectionId, 1);
+        setStringg(PrepStatement, instructorUserId, 2);
+        try (ResultSet rs = PrepStatement.executeQuery()) {
+            return rs.next();
+        }
+    }
+}
+
+
+public List<Map<String,Object>> Findall_usingCourseTitle() throws SQLException {
+    String sql="SELECT s.section_id, s.course_id, c.title AS course_title, s.day, s.semester, s.year, s.capacity " +"FROM sections s LEFT JOIN courses c ON s.course_id = c.course_id ORDER BY s.course_id, s.section_id";
+    List<Map<String,Object>> out=new ArrayList<>();
+    try (Connection Connect=DBConnection.getStudentConnection();
+         PreparedStatement prepStatement=Connect.prepareStatement(sql);
+         ResultSet ResultSet=prepStatement.executeQuery()) {
+         while (ResultSet.next()) {
+            Map<String,Object> map=new HashMap<>();
+            map.put("section_id", ResultSet.getInt("section_id"));map.put("course_id", ResultSet.getString("course_id"));map.put("course_title", ResultSet.getString("course_title"));
+            map.put("day", ResultSet.getString("day"));map.put("semester", ResultSet.getString("semester"));map.put("year", ResultSet.getInt("year"));map.put("capacity", ResultSet.getInt("capacity"));
+            out.add(map);
+        }}return out;
+}
+
    
-    // public void createSection(Section s) throws SQLException {
-    //     String sql = "INSERT INTO sections (course_id, instructor_id, day, days, start_time, end_time, capacity, semester, year) " +
-    //                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    //     try (Connection conn = DBConnection.getStudentConnection();
-    //          PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-    //         int idx = 1;
-    //         ps.setString(idx++, s.GetCourseID());
-    //         ps.setString(idx++, s.GetInstructorID());
-
-    //         // legacy single day column (to keep compatibility) - store primary day name
-    //         if (s.GetDay() == null) ps.setNull(idx++, Types.VARCHAR);
-    //         else ps.setString(idx++, s.GetDay().name());
-
-    //         // new CSV days column (may be null)
-    //         if (s.GetDays() == null) ps.setNull(idx++, Types.VARCHAR);
-    //         else ps.setString(idx++, s.GetDays());
-
-    //         // start_time, end_time as strings (HH:mm) - store as VARCHAR in DB
-    //         if (s.GetStartTime() == null) ps.setNull(idx++, Types.VARCHAR);
-    //         else ps.setString(idx++, s.GetStartTime());
-
-    //         if (s.GetEndTime() == null) ps.setNull(idx++, Types.VARCHAR);
-    //         else ps.setString(idx++, s.GetEndTime());
-
-    //         if (s.GetCapacity() == null) ps.setNull(idx++, Types.INTEGER);
-    //         else ps.setInt(idx++, s.GetCapacity());
-
-    //         ps.setString(idx++, s.GetSemester());
-
-    //         if (s.GetYear() == null) ps.setNull(idx++, Types.INTEGER);
-    //         else ps.setInt(idx++, s.GetYear());
-
-    //         ps.executeUpdate();
-    //         try (ResultSet keys = ps.getGeneratedKeys()) {
-    //             if (keys.next()) s.SetSectionID(keys.getInt(1));
-    //         }
-    //     }
-    // }
 
     public List<Section> FindFromCourse(String courseId) throws SQLException {
         String sql = "select section_id, Course_id, Instructor_id, Day, Days, Start_time, End_time, Capacity, Semester, Year " + "from sections WHERE course_id = ?";
@@ -85,87 +115,7 @@ public class SectionDao {
     }
 
    
-    // public void updateSection(Section s) throws SQLException {
-    //     String sql = "UPDATE sections SET course_id = ?, Instructor_id = ?, Day = ?, Days = ?, Start_time = ?, End_time = ?, " +
-    //                  "Capacity = ?, Semester = ?, Year = ? where section_id = ?";
-    //     try (Connection conn = DBConnection.getStudentConnection();
-    //          PreparedStatement ps = conn.prepareStatement(sql)) {
-
-    //         int idx = 1;
-    //         ps.setString(idx++, s.GetCourseID());
-    //         ps.setString(idx++, s.GetInstructorID());
-    //         if (s.GetDay() == null) ps.setNull(idx++, Types.VARCHAR);
-    //         else ps.setString(idx++, s.GetDay().name());
-
-    //         if (s.GetDays() == null) ps.setNull(idx++, Types.VARCHAR);
-    //         else ps.setString(idx++, s.GetDays());
-
-    //         if (s.GetStartTime() == null) ps.setNull(idx++, Types.VARCHAR);
-    //         else ps.setString(idx++, s.GetStartTime());
-
-    //         if (s.GetEndTime() == null) ps.setNull(idx++, Types.VARCHAR);
-    //         else ps.setString(idx++, s.GetEndTime());
-
-    //         if (s.GetCapacity() == null) ps.setNull(idx++, Types.INTEGER);
-    //         else ps.setInt(idx++, s.GetCapacity());
-
-    //         ps.setString(idx++, s.GetSemester());
-
-    //         if (s.GetYear() == null) ps.setNull(idx++, Types.INTEGER);
-    //         else ps.setInt(idx++, s.GetYear());
-
-    //         ps.setInt(idx++, s.GetSectionID());
-    //         ps.executeUpdate();
-    //     }
-    // }
-
-    // public void deleteSection(int sectionId) throws SQLException {
-    //     String sql = "DELETE FROM sections WHERE section_id = ?";
-    //     try (Connection conn = DBConnection.getStudentConnection();
-    //          PreparedStatement ps = conn.prepareStatement(sql)) {
-    //         ps.setInt(1, sectionId);
-    //         ps.executeUpdate();
-    //     }
-    // }
-
- 
-    // public java.util.List<Object[]> findCourseSummaries() throws SQLException {
-    //     String sql =
-    //         "SELECT DISTINCT s.course_id, c.title, c.credits, COALESCE(i.name, '') AS instructor_name " +
-    //         "FROM sections s " +
-    //         "JOIN courses c ON s.course_id = c.course_id " +
-    //         "LEFT JOIN instructors i ON ( " +
-    //         "   (i.user_id IS NOT NULL AND i.user_id = s.instructor_id) OR " +
-    //         "   (CAST(i.instructor_id AS CHAR) = s.instructor_id) " +
-    //         ")";
-    //     java.util.List<Object[]> out = new java.util.ArrayList<>();
-    //     try (Connection conn = DBConnection.getStudentConnection();
-    //          PreparedStatement ps = conn.prepareStatement(sql);
-    //          ResultSet rs = ps.executeQuery()) {
-    //         while (rs.next()) {
-    //             String courseId = rs.getString("course_id");
-    //             String title = rs.getString("title");
-    //             int credits = rs.getInt("credits");
-    //             String instr = rs.getString("instructor_name");
-    //             out.add(new Object[] { courseId, title, credits, instr });
-    //         }
-    //     }
-    //     return out;
-    // }
-
-
-    // public List<Section> getAllSections() throws SQLException {
-    //     String sql = "SELECT section_id, course_id, Instructor_id, Day, Days, Start_time, End_time, Capacity, Semester, YEAR FROM sections ORDER BY course_id, section_id";
-    //     List<Section> out = new ArrayList<>();
-    //     try (Connection conn = DBConnection.getStudentConnection();
-    //          PreparedStatement ps = conn.prepareStatement(sql);
-    //          ResultSet rs = ps.executeQuery()) {
-    //         while (rs.next()) {
-    //             out.add(mapRowToSection(rs));
-    //         }
-    //     }
-    //     return out;
-    // }
+    
      private Section Mapping_To_Section(ResultSet resultSet) throws SQLException {
         Section new_s=new Section();
         new_s.SetSectionID(resultSet.getInt("section_id"));
@@ -216,4 +166,33 @@ public class SectionDao {
         
     return new_s;
     }
+
+public static class SectionCapacityDeadline {
+    public final Integer Cap;
+    public final java.sql.Timestamp RegDeadline;
+    public SectionCapacityDeadline(Integer capacity, java.sql.Timestamp a){
+         this.Cap = capacity; 
+         this.RegDeadline = a; }
+}
+
+public SectionCapacityDeadline LocKCAPdeadline(Connection Connect, int SecID) throws SQLException {
+    String sql="SELECT capacity, registration_deadline FROM sections WHERE section_id = ? FOR UPDATE";
+    try (PreparedStatement Prepstatement=Connect.prepareStatement(sql)) {
+        setINT(Prepstatement, SecID,1);
+        try (ResultSet resultSet = Prepstatement.executeQuery()) {
+            if (!resultSet.next()) {
+                return null;
+            }
+            java.sql.Timestamp RegDeadline = resultSet.getTimestamp("registration_deadline");
+            int Rcap=resultSet.getInt("capacity");
+            Integer Cap;
+                if (resultSet.wasNull()){
+                    Cap=null;
+                }else {
+                    Cap=Rcap;
+                }
+            return new SectionCapacityDeadline(Cap, RegDeadline);
+        }
+    }
+}
 }

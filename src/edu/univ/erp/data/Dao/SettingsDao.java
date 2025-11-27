@@ -40,6 +40,15 @@ public class SettingsDao {
         }
         return null;
     }
+    public int updateMaintenance(boolean on) throws SQLException {
+    String sql = "update settings SET maintenance_on = ?, `value` = ? WHERE `key` = 'maintenance.on'";
+    try (Connection Connect=DBConnection.getStudentConnection();
+        PreparedStatement prepStatement=Connect.prepareStatement(sql)){
+        prepStatement.setInt(1, on ? 1 : 0);
+        setStringg(prepStatement,Boolean.toString(on),2);
+        return prepStatement.executeUpdate();
+    }
+}
 
     public boolean GetBooleanvalue(String key, boolean defaultValue)throws SQLException {
         Setting s=FindKey(key);

@@ -50,7 +50,7 @@ public class LoginPanel extends JPanel {
 
 
         //title for the page
-        JLabel title = new JLabel("ERP PORTAL🎓");
+        JLabel title = new JLabel("ERP PORTAL ");
         title.setFont(new Font("Arial", Font.BOLD, 28));
         title.setForeground(PRIMARY_COLOR);
         title.setBorder(new EmptyBorder(0, 0, 30, 0));

@@ -1,7 +1,5 @@
 package edu.univ.erp.ui.admin;
-
 import edu.univ.erp.data.DBConnection;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -14,68 +12,64 @@ public class CourseManagementPanel extends JPanel {
     private DefaultTableModel model;
     private JButton btnRefresh, btnCreate, btnEdit, btnDelete;
 
-    private static final int PADDING = 20;
-    private static final int GAP = 12;
-    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 20);
-    private static final Dimension BUTTON_SIZE = new Dimension(160, 35);
-    private static final Color PRIMARY_COLOR = new Color(70, 130, 180);
-
     public CourseManagementPanel() {
         initUI();
         loadCourses();
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(GAP, GAP));
-        setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
+        setLayout(new BorderLayout(12, 12));
+        setBorder(new EmptyBorder(20, 20, 20, 20));
         setBackground(Color.WHITE);
 
-        JLabel title = new JLabel("Course Catalog Management");
-        title.setFont(TITLE_FONT);
-        title.setBorder(new EmptyBorder(0, 0, GAP, 0));
+        JLabel title=new JLabel("Course Catalog Management");
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setBorder(new EmptyBorder(0, 0, 12, 0));
         add(title, BorderLayout.NORTH);
 
-        model = new DefaultTableModel(new Object[]{"Course ID", "Title", "Credits", "Department"}, 0) {
+        model=new DefaultTableModel(new Object[]{"Course ID", "Title", "Credits", "Department"}, 0) {
             @Override public boolean isCellEditable(int r, int c){ return false; }
         };
-        table = new JTable(model);
+        table=new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setRowHeight(25);
         table.setFont(new Font("Arial", Font.PLAIN, 14));
         table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
 
-        JScrollPane scrollPane = new JScrollPane(table);
+        JScrollPane scrollPane=new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
         add(scrollPane, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel();
+        JPanel buttonPanel=new JPanel();
         buttonPanel.setLayout(new GridBagLayout());
         buttonPanel.setBackground(Color.WHITE);
-        GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.HORIZONTAL;
-        c.insets = new Insets(GAP / 2, 0, GAP / 2, 0);
-        c.gridx = 0; c.weightx = 1.0;
+        GridBagConstraints constraint=new GridBagConstraints();
+        constraint.fill=GridBagConstraints.HORIZONTAL;
+        constraint.insets=new Insets(12 / 2, 0, 12 / 2, 0);
+        constraint.gridx=0; 
+        constraint.weightx=1.0;
 
-        btnRefresh = new JButton("Refresh List");
-        btnCreate = new JButton("Create New Course");
-        btnEdit = new JButton("Edit Selected");
-        btnDelete = new JButton("Delete Selected");
+        btnRefresh=new JButton("Refresh List");
+        btnCreate=new JButton("Create New Course");
+        btnEdit=new JButton("Edit Selected");
+        btnDelete=new JButton("Delete Selected");
 
         styleButton(btnRefresh, Color.LIGHT_GRAY);
         styleButton(btnCreate, new Color(180, 220, 255));
         styleButton(btnEdit, new Color(255, 230, 180));
         styleButton(btnDelete, new Color(255, 180, 180));
-        btnCreate.setForeground(PRIMARY_COLOR);
+        btnCreate.setForeground(new Color(70, 130, 180));
         btnDelete.setForeground(Color.RED);
 
-        c.gridy = 0; buttonPanel.add(btnRefresh, c);
-        c.gridy = 1; buttonPanel.add(Box.createVerticalStrut(GAP), c);
-        c.gridy = 2; buttonPanel.add(btnCreate, c);
-        c.gridy = 3; buttonPanel.add(btnEdit, c);
-        c.gridy = 4; buttonPanel.add(btnDelete, c);
+        constraint.gridy=0; buttonPanel.add(btnRefresh, constraint);
+        constraint.gridy=1; buttonPanel.add(Box.createVerticalStrut(12), constraint);
+        constraint.gridy=2; buttonPanel.add(btnCreate, constraint);
+        constraint.gridy=3; buttonPanel.add(btnEdit, constraint);
+        constraint.gridy=4; buttonPanel.add(btnDelete, constraint);
 
-        c.gridy = 5; c.weighty = 1.0;
-        buttonPanel.add(Box.createVerticalGlue(), c);
+        constraint.gridy=5; 
+        constraint.weighty=1.0;
+        buttonPanel.add(Box.createVerticalGlue(), constraint);
 
         add(buttonPanel, BorderLayout.EAST);
 
@@ -85,180 +79,212 @@ public class CourseManagementPanel extends JPanel {
         btnDelete.addActionListener(e -> deleteSelected());
     }
 
-    private void styleButton(JButton button, Color background) {
-        button.setPreferredSize(BUTTON_SIZE);
-        button.setMinimumSize(BUTTON_SIZE);
-        button.setMaximumSize(BUTTON_SIZE);
-        button.setFocusPainted(false);
-        button.setBackground(background);
+    private void styleButton(JButton btn, Color bg) {
+        btn.setPreferredSize(new Dimension(160, 35));
+        btn.setMinimumSize(new Dimension(160, 35));
+        btn.setMaximumSize(new Dimension(160, 35));
+        btn.setFocusPainted(false);
+        btn.setBackground(bg);
     }
 
     private void loadCourses() {
         model.setRowCount(0);
         String sql = "SELECT course_id, title, credits, department_id FROM courses ORDER BY course_id";
-        try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                Vector<Object> row = new Vector<>();
-                row.add(rs.getString("course_id"));
-                row.add(rs.getString("title"));
-                row.add(rs.getObject("credits"));
-                row.add(rs.getString("department_id"));
+        try (Connection connect = DBConnection.getStudentConnection();
+             PreparedStatement prepStatement = connect.prepareStatement(sql);
+             ResultSet resultSet = prepStatement.executeQuery()) {
+            while (resultSet.next()) {
+                Vector<Object> row=new Vector<>();
+                row.add(resultSet.getString("course_id"));
+                row.add(resultSet.getString("title"));
+                row.add(resultSet.getObject("credits"));
+                row.add(resultSet.getString("department_id"));
                 model.addRow(row);
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to load courses: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } 
+        catch (Exception exception) {
+            exception.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to load courses: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void openCreateDialog() {
-        JTextField tfId = new JTextField(15);
-        JTextField tfTitle = new JTextField(15);
-        JTextField tfCredits = new JTextField(15);
-        JTextField tfDept = new JTextField(15);
+        JTextField tfId=new JTextField(15);
+        JTextField tfTitle=new JTextField(15);
+        JTextField tfCredits=new JTextField(15);
+        JTextField tfDept=new JTextField(15);
 
         JPanel p = createFormPanel(
             new String[]{"Course ID:", "Title:", "Credits:", "Department ID:"},
             new JComponent[]{tfId, tfTitle, tfCredits, tfDept}
         );
 
-        int r = JOptionPane.showConfirmDialog(this, p, "Create New Course", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (r != JOptionPane.OK_OPTION) return;
-
-        String id = tfId.getText().trim();
-        String title = tfTitle.getText().trim();
-        Integer credits = null;
+        int r=JOptionPane.showConfirmDialog(this, p, "Create New Course", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (r != JOptionPane.OK_OPTION) {
+            return;
+        }
+        String id=tfId.getText().trim();
+        String title=tfTitle.getText().trim();
+        Integer credits=null;
         try {
             if (!tfCredits.getText().trim().isEmpty()) {
-                credits = Integer.parseInt(tfCredits.getText().trim());
+                credits=Integer.parseInt(tfCredits.getText().trim());
             }
-        } catch (NumberFormatException ex) {
+        } 
+        catch (NumberFormatException exception) {
             JOptionPane.showMessageDialog(this, "Credits must be a valid whole number.", "Input Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        String dept = tfDept.getText().trim();
+        String dept=tfDept.getText().trim();
 
-        if (id.isEmpty() || title.isEmpty()) {
+        if ( title.isEmpty() || id.isEmpty() ) {
             JOptionPane.showMessageDialog(this, "Course ID and title are required fields.", "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement("INSERT INTO courses (course_id, title, credits, department_id) VALUES (?, ?, ?, ?)")) {
-            ps.setString(1, id);
-            ps.setString(2, title);
-            if (credits == null) ps.setNull(3, Types.INTEGER); else ps.setInt(3, credits);
-            ps.setString(4, dept);
-            ps.executeUpdate();
+        try (Connection connect = DBConnection.getStudentConnection();
+             PreparedStatement prepStatement = connect.prepareStatement("INSERT INTO courses (course_id, title, credits, department_id) VALUES (?, ?, ?, ?)")) {
+            prepStatement.setString(1, id);
+            prepStatement.setString(2, title);
+            if (credits!=null) {
+                prepStatement.setInt(3, credits);
+            }
+            else {
+                prepStatement.setNull(3, Types.INTEGER);
+            }
+            prepStatement.setString(4, dept);
+            prepStatement.executeUpdate();
             JOptionPane.showMessageDialog(this, "Course " + id + " created successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
             loadCourses();
-        } catch (SQLIntegrityConstraintViolationException ex) {
+        } 
+        catch (SQLIntegrityConstraintViolationException exception) {
             JOptionPane.showMessageDialog(this, "Course ID already exists or Department ID is invalid.", "Duplicate/Invalid Data", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Create failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } 
+        catch (Exception exception) {
+            exception.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Create failed: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void openEditDialog() {
-        int selView = table.getSelectedRow();
-        if (selView < 0) { JOptionPane.showMessageDialog(this, "Please select a course to edit.", "Selection Required", JOptionPane.WARNING_MESSAGE); return; }
+        int selectView=table.getSelectedRow();
+        if (selectView < 0) { 
+            JOptionPane.showMessageDialog(this, "Please select a course to edit.", "Selection Required", JOptionPane.WARNING_MESSAGE); 
+            return; 
+        }
 
-        int modelRow = table.convertRowIndexToModel(selView);
+        int modelRow=table.convertRowIndexToModel(selectView);
 
-        String id = model.getValueAt(modelRow,0).toString();
-        String curTitle = model.getValueAt(modelRow,1).toString();
-        String curCredits = String.valueOf(model.getValueAt(modelRow,2));
-        String curDept = String.valueOf(model.getValueAt(modelRow,3));
+        String id=model.getValueAt(modelRow,0).toString();
+        String curTitle=model.getValueAt(modelRow,1).toString();
+        String curCredits=String.valueOf(model.getValueAt(modelRow,2));
+        String curDept=String.valueOf(model.getValueAt(modelRow,3));
 
-        JTextField tfTitle = new JTextField(curTitle, 15);
-        JTextField tfCredits = new JTextField(curCredits.equals("null") ? "" : curCredits, 15);
-        JTextField tfDept = new JTextField(curDept.equals("null") ? "" : curDept, 15);
-        JLabel lblId = new JLabel(id);
+        JTextField tfTitle=new JTextField(curTitle, 15);
+        JTextField tfCredits=new JTextField(curCredits.equals("null") ? "" : curCredits, 15);
+        JTextField tfDept=new JTextField(curDept.equals("null") ? "" : curDept, 15);
+        JLabel lblId=new JLabel(id);
 
-        JPanel p = createFormPanel(
+        JPanel p=createFormPanel(
             new String[]{"Course ID:", "Title:", "Credits:", "Department ID:"},
             new JComponent[]{lblId, tfTitle, tfCredits, tfDept}
         );
 
         int r = JOptionPane.showConfirmDialog(this, p, "Edit Course: " + id, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (r != JOptionPane.OK_OPTION) return;
+        if (r != JOptionPane.OK_OPTION) {
+            return;
+        }
 
-        String title = tfTitle.getText().trim();
-        Integer credits = null;
+        String title=tfTitle.getText().trim();
+        Integer credits=null;
         try {
             if (!tfCredits.getText().trim().isEmpty()) {
                 credits = Integer.parseInt(tfCredits.getText().trim());
             }
-        } catch (NumberFormatException ex) {
+        } 
+        catch (NumberFormatException exception) {
             JOptionPane.showMessageDialog(this, "Credits must be a valid whole number.", "Input Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        String dept = tfDept.getText().trim();
+        String dept=tfDept.getText().trim();
 
-        try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement("UPDATE courses SET title = ?, credits = ?, department_id = ? WHERE course_id = ?")) {
-            ps.setString(1, title);
-            if (credits == null) ps.setNull(2, Types.INTEGER); else ps.setInt(2, credits);
-            ps.setString(3, dept);
-            ps.setString(4, id);
-            ps.executeUpdate();
+        try (Connection connect = DBConnection.getStudentConnection();
+             PreparedStatement prepStatement = connect.prepareStatement("UPDATE courses SET title = ?, credits = ?, department_id = ? WHERE course_id = ?")) {
+            prepStatement.setString(1, title);
+            if (credits != null) {
+                prepStatement.setInt(2, credits);
+            } 
+            else {
+                prepStatement.setNull(2, Types.INTEGER);
+            }
+            prepStatement.setString(3, dept);
+            prepStatement.setString(4, id);
+            prepStatement.executeUpdate();
             JOptionPane.showMessageDialog(this, "Course " + id + " updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
             loadCourses();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Update failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } 
+        catch (Exception exception) {
+            exception.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Update failed: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void deleteSelected() {
-        int selView = table.getSelectedRow();
-        if (selView < 0) { JOptionPane.showMessageDialog(this, "Please select a course to delete.", "Selection Required", JOptionPane.WARNING_MESSAGE); return; }
+        int selectView=table.getSelectedRow();
+        if (selectView < 0){ 
+            JOptionPane.showMessageDialog(this, "Please select a course to delete.", "Selection Required", JOptionPane.WARNING_MESSAGE); 
+            return; 
+        }
 
-        int modelRow = table.convertRowIndexToModel(selView);
-        String id = model.getValueAt(modelRow,0).toString();
-        String title = model.getValueAt(modelRow,1).toString();
+        int modelRow=table.convertRowIndexToModel(selectView);
+        String id=model.getValueAt(modelRow,0).toString();
+        String title=model.getValueAt(modelRow,1).toString();
 
         int c = JOptionPane.showConfirmDialog(this,
             "Are you sure you want to delete course " + id + " - " + title + "?\nWARNING: This action is permanent and will fail if sections currently reference it.",
             "Confirm Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-        if (c != JOptionPane.YES_OPTION) return;
+        if (c != JOptionPane.YES_OPTION) {
+            return;
+        }
 
-        try (Connection conn = DBConnection.getStudentConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM courses WHERE course_id = ?")) {
-            ps.setString(1, id);
-            int rows = ps.executeUpdate();
-            if (rows == 0) {
+        try (Connection connect = DBConnection.getStudentConnection();
+             PreparedStatement prepStatement = connect.prepareStatement("DELETE FROM courses WHERE course_id = ?")) {
+            prepStatement.setString(1, id);
+            int row=prepStatement.executeUpdate();
+            if (row == 0) {
                 JOptionPane.showMessageDialog(this, "No course was deleted (it may no longer exist).", "Info", JOptionPane.INFORMATION_MESSAGE);
-            } else {
+            } 
+            else {
                 JOptionPane.showMessageDialog(this, "Course " + id + " deleted.", "Success", JOptionPane.INFORMATION_MESSAGE);
             }
             loadCourses();
-        } catch (SQLIntegrityConstraintViolationException ex) {
+        } 
+        catch (SQLIntegrityConstraintViolationException exception) {
             JOptionPane.showMessageDialog(this, "Cannot delete course " + id + " because it is referenced by existing sections or enrollments.", "Constraint Error", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Delete failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } 
+        catch (Exception exception) {
+            exception.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Delete failed: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private JPanel createFormPanel(String[] labels, JComponent[] fields) {
-        JPanel p = new JPanel(new GridBagLayout());
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(6, 6, 6, 6);
-        c.fill = GridBagConstraints.HORIZONTAL;
+        JPanel p=new JPanel(new GridBagLayout());
+        GridBagConstraints gbc=new GridBagConstraints();
+        gbc.insets=new Insets(6, 6, 6, 6);
+        gbc.fill=GridBagConstraints.HORIZONTAL;
 
         for (int i = 0; i < labels.length; i++) {
-            // Label
-            c.gridx = 0; c.gridy = i; c.weightx = 0;
-            p.add(new JLabel(labels[i]), c);
+            gbc.gridx = 0; 
+            gbc.gridy = i; 
+            gbc.weightx = 0;
+            p.add(new JLabel(labels[i]), gbc);
 
-            // Field
-            c.gridx = 1; c.gridy = i; c.weightx = 1.0;
-            p.add(fields[i], c);
+            gbc.gridx = 1; 
+            gbc.gridy = i; 
+            gbc.weightx = 1.0;
+            p.add(fields[i], gbc);
         }
         return p;
     }

@@ -94,14 +94,14 @@ public class GradebookPanel extends JPanel {
             
             @Override
             public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
-                Component c = super.prepareRenderer(renderer, row, column);
+                Component comp = super.prepareRenderer(renderer, row, column);
                if (isRowSelected(row)) {      // check krliyo yeh 
-                    c.setBackground(new Color(220, 235, 255));
+                    comp.setBackground(new Color(220, 235, 255));
                 } 
                 else {
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 250, 250));
+                    comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 250, 250));
                 }
-                return c;
+                return comp;
             }
         };
 
@@ -114,15 +114,15 @@ public class GradebookPanel extends JPanel {
         rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
         table.getColumnModel().getColumn(4).setCellRenderer(rightRenderer);
 
-        compEditor = new JComboBox<>(componentMax.keySet().toArray(new String[0]));
+        compEditor=new JComboBox<>(componentMax.keySet().toArray(new String[0]));
         compEditor.setEditable(false);
-        TableColumn compColumn = table.getColumnModel().getColumn(3);
+        TableColumn compColumn=table.getColumnModel().getColumn(3);
         compColumn.setCellEditor(new DefaultCellEditor(compEditor));
         compColumn.setPreferredWidth(180);
 
         add(new JScrollPane(table), BorderLayout.CENTER);
 
-        tLog = new JTextArea(6, 80);
+        tLog=new JTextArea(6, 80);
         tLog.setEditable(false);
         tLog.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         tLog.setBackground(new Color(30,30,30));
@@ -218,7 +218,7 @@ public class GradebookPanel extends JPanel {
                     "Maintenance ON", JOptionPane.WARNING_MESSAGE);
             return false;
         }
-        if (!instructorService.IsInstructorIn(instructorUserId, sectionId)) {
+        if (!instructorService.isInstructorIn(instructorUserId, sectionId)) {
             JOptionPane.showMessageDialog(this,
                     "Not your section.", "Permission denied", JOptionPane.ERROR_MESSAGE);
             return false;
@@ -256,8 +256,13 @@ public class GradebookPanel extends JPanel {
             return;
         }
         BigDecimal score;
-        try { score = new BigDecimal(scoreStr); }
-        catch (Exception ex) { JOptionPane.showMessageDialog(this, "Invalid score format.", "Error", JOptionPane.ERROR_MESSAGE); return; }
+        try { 
+            score=new BigDecimal(scoreStr); 
+        }
+        catch (Exception exception) { 
+            JOptionPane.showMessageDialog(this, "Invalid score format.", "Error", JOptionPane.ERROR_MESSAGE); 
+            return; 
+        }
 
         BigDecimal compMax = componentMax.getOrDefault(component, new BigDecimal("100"));
         if (score.compareTo(compMax) > 0) {
@@ -266,8 +271,7 @@ public class GradebookPanel extends JPanel {
                     "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
-        boolean ok = upsertGradeInDb(enrollmentId, component, score);
+        boolean ok=upsertGradeInDb(enrollmentId, component, score);
         if (!ok) {
             appendLog("Save failed for enrollment " + enrollmentId);
             JOptionPane.showMessageDialog(this, "Failed to save grade.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -289,16 +293,17 @@ public class GradebookPanel extends JPanel {
             int enrollmentId;
             try { enrollmentId = Integer.parseInt(String.valueOf(enrollObj)); }
             catch (Exception exception) { 
-                skip++; continue; 
+                skip++;
+                 continue; 
             }
 
-            String component = String.valueOf(model.getValueAt(r, 3)).trim();
-            String scoreStr = String.valueOf(model.getValueAt(r, 4)).trim();
+            String component=String.valueOf(model.getValueAt(r, 3)).trim();
+            String scoreStr=String.valueOf(model.getValueAt(r, 4)).trim();
             if (component.isEmpty() || scoreStr.isEmpty()) { skip++; continue; }
 
             BigDecimal score;
             try { 
-                score = new BigDecimal(scoreStr); 
+                score=new BigDecimal(scoreStr); 
             } 
                 catch (Exception exception) { 
                     skip++; continue; 
@@ -329,7 +334,6 @@ public class GradebookPanel extends JPanel {
     String updateSql = "UPDATE grades SET score = ? WHERE grade_id = ?";
 
     try (Connection conn = DBConnection.getStudentConnection()) {
-        // 0) check if final exists for this enrollment -> disallow edits if present
         try (PreparedStatement pCheckFinal = conn.prepareStatement(checkFinalSql)) {
             pCheckFinal.setInt(1, enrollmentId);
             try (ResultSet rs = pCheckFinal.executeQuery()) {
@@ -345,7 +349,7 @@ public class GradebookPanel extends JPanel {
             }
         }
 
-        // proceed with upsert
+    
         Integer gradeId = null;
         try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
             ps.setInt(1, enrollmentId);
@@ -435,11 +439,11 @@ public class GradebookPanel extends JPanel {
                 continue;
             } 
             catch (Exception exception) {
-                lastEx = exception;
+                lastEx=exception;
                 break;
             }
         }
-        if (lastEx == null) {
+        if (lastEx==null) {
             JOptionPane.showMessageDialog(this,
                     "Definalize not supported by InstructorService. Implement definalizeGrades/unfinalizeGrades/setFinalized.",
                     "Not supported", JOptionPane.INFORMATION_MESSAGE);

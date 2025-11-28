@@ -1,7 +1,5 @@
 package edu.univ.erp.ui.student;
-
 import edu.univ.erp.service.StudentService;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -10,107 +8,82 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutionException;
 
-/**
- * TranscriptPanel - simple UI to request transcript generation (CSV) from StudentService,
- * let the user choose a save location and (optionally) open the file after saving.
- *
- * Constructor: TranscriptPanel(StudentService service, String userId)
- *
- * NOTE: This version does NOT use HTML in labels.
- */
 public class TranscriptPanel extends JPanel {
-
     private final StudentService studentService;
     private final String userId;
-
     private final JButton btnGenerate;
     private final JButton btnOpenLast;
     private File lastGenerated;
 
-    // --- Aesthetic constants ---
-    private static final int PADDING = 20;
-    private static final int GAP = 15;
-    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 20);
-    private static final Font SUBTITLE_FONT = new Font("Arial", Font.PLAIN, 12);
-    private static final Dimension BUTTON_SIZE = new Dimension(220, 40);
-    private static final Color PRIMARY_COLOR = new Color(0, 102, 204); // Deep Blue
-    private static final Color SUBTEXT_COLOR = new Color(120, 120, 120);
 
     public TranscriptPanel(StudentService studentService, String userId) {
-        this.studentService = studentService;
-        this.userId = userId;
+        this.studentService=studentService;
+        this.userId=userId;
 
-        // 1. Overall Layout & Padding
-        setLayout(new BorderLayout(GAP, GAP));
-        setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
+        setLayout(new BorderLayout(15, 15));
+        setBorder(new EmptyBorder(20, 20, 20, 20));
         setBackground(Color.WHITE);
 
-        // 2. Header (North) — plain labels instead of HTML
-        JPanel header = new JPanel(new BorderLayout());
+        JPanel header=new JPanel(new BorderLayout());
         header.setBackground(Color.WHITE);
-        header.setBorder(new EmptyBorder(0, 0, GAP, 0));
+        header.setBorder(new EmptyBorder(0, 0, 15, 0));
 
-        JLabel title = new JLabel("📜  Official Transcript Download");
-        title.setFont(TITLE_FONT);
-        title.setForeground(PRIMARY_COLOR);
+        JLabel title=new JLabel("📜  Official Transcript Download");
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(new Color(0, 102, 204));
 
-        JLabel subtitle = new JLabel("Generate and download your academic record as a CSV file.");
-        subtitle.setFont(SUBTITLE_FONT);
-        subtitle.setForeground(SUBTEXT_COLOR);
+        JLabel sub=new JLabel("Generate and download your academic record as a CSV file.");
+        sub.setFont(new Font("Arial", Font.PLAIN, 12));
+        sub.setForeground(new Color(120, 120, 120));
 
-        // Put title above subtitle with a small vertical gap
-        JPanel titleBlock = new JPanel();
-        titleBlock.setLayout(new BoxLayout(titleBlock, BoxLayout.Y_AXIS));
-        titleBlock.setBackground(Color.WHITE);
-        titleBlock.add(title);
-        titleBlock.add(Box.createVerticalStrut(6));
-        titleBlock.add(subtitle);
+        JPanel title_Block=new JPanel();
+        title_Block.setLayout(new BoxLayout(title_Block, BoxLayout.Y_AXIS));
+        title_Block.setBackground(Color.WHITE);
+        title_Block.add(title);
+        title_Block.add(Box.createVerticalStrut(6));
+        title_Block.add(sub);
 
-        header.add(titleBlock, BorderLayout.WEST);
+        header.add(title_Block, BorderLayout.WEST);
         add(header, BorderLayout.NORTH);
 
-        // 3. Center Action Panel (using GridBagLayout to center content)
-        JPanel center = new JPanel(new GridBagLayout());
+        JPanel center=new JPanel(new GridBagLayout());
         center.setBackground(Color.WHITE);
 
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(GAP, GAP, GAP, GAP);
-        c.gridx = 0;
+        GridBagConstraints constraint=new GridBagConstraints();
+        constraint.insets=new Insets(15, 15, 15, 15);
+        constraint.gridx=0;
 
-        btnGenerate = new JButton("💾 Generate & Save Transcript");
-        btnOpenLast = new JButton("📁 Open Last Saved File");
+        btnGenerate=new JButton("💾 Generate & Save Transcript");
+        btnOpenLast=new JButton("📁 Open Last Saved File");
 
-        // Style Buttons
-        styleButton(btnGenerate, PRIMARY_COLOR, Color.WHITE);
+        styleButton(btnGenerate, new Color(0, 102, 204), Color.WHITE);
         styleButton(btnOpenLast, Color.LIGHT_GRAY, Color.BLACK);
 
-        btnOpenLast.setEnabled(false); // Initial state
+        btnOpenLast.setEnabled(false); 
 
-        c.gridy = 0;
-        center.add(btnGenerate, c);
-        c.gridy = 1;
-        center.add(btnOpenLast, c);
+        constraint.gridy = 0;
+        center.add(btnGenerate, constraint);
+        constraint.gridy = 1;
+        center.add(btnOpenLast, constraint);
 
         add(center, BorderLayout.CENTER);
 
-        // 4. Actions
         btnGenerate.addActionListener(e -> onGenerate());
         btnOpenLast.addActionListener(e -> onOpenLast());
     }
 
-    private void styleButton(JButton button, Color bg, Color fg) {
-        button.setPreferredSize(BUTTON_SIZE);
-        button.setFocusPainted(false);
-        button.setBackground(bg);
-        button.setForeground(fg);
+    private void styleButton(JButton btn, Color b, Color f) {
+        btn.setPreferredSize(new Dimension(220, 40));
+        btn.setFocusPainted(false);
+        btn.setBackground(b);
+        btn.setForeground(f);
     }
 
     private void onGenerate() {
         btnGenerate.setEnabled(false);
-        SwingWorker<File, Void> w = new SwingWorker<>() {
+        SwingWorker<File, Void> w=new SwingWorker<>() {
             @Override
             protected File doInBackground() throws Exception {
-                // expected signature in service: File generateTranscriptCsv(String userId) throws Exception
                 return studentService.CsvGeneration(userId);
             }
 
@@ -119,42 +92,40 @@ public class TranscriptPanel extends JPanel {
                 btnGenerate.setEnabled(true);
                 try {
                     File src = get();
-                    if (src == null || !src.exists()) {
+                    if (src == null|| !src.exists()) {
                         JOptionPane.showMessageDialog(TranscriptPanel.this, "Transcript generation failed (service returned no file).", "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
 
-                    // ask user where to save
-                    JFileChooser chooser = new JFileChooser();
-                    chooser.setDialogTitle("Save Transcript as");
-                    chooser.setSelectedFile(new File("transcript_" + userId + ".csv"));
+                    JFileChooser choose=new JFileChooser();
+                    choose.setDialogTitle("Save Transcript as");
+                    choose.setSelectedFile(new File("transcript_" + userId + ".csv"));
 
-                    int rv = chooser.showSaveDialog(TranscriptPanel.this);
-                    if (rv != JFileChooser.APPROVE_OPTION) {
-                        // user cancelled: keep lastGenerated (temp file) but don't copy
-                        lastGenerated = src;
+                    int rv=choose.showSaveDialog(TranscriptPanel.this);
+                    if (rv!=JFileChooser.APPROVE_OPTION) {
+                        lastGenerated=src;
                         btnOpenLast.setEnabled(true);
                         return;
                     }
 
-                    File dest = chooser.getSelectedFile();
-                    // copy file
+                    File dest = choose.getSelectedFile();
                     Files.copy(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     lastGenerated = dest;
                     btnOpenLast.setEnabled(true);
 
                     JOptionPane.showMessageDialog(TranscriptPanel.this, "Transcript saved successfully to:\n" + dest.getAbsolutePath(), "Saved", JOptionPane.INFORMATION_MESSAGE);
 
-                } catch (ExecutionException ex) {
-                    Throwable cause = ex.getCause();
-                    JOptionPane.showMessageDialog(TranscriptPanel.this, "Failed to generate transcript: " + (cause == null ? ex.getMessage() : cause.getMessage()), "Error", JOptionPane.ERROR_MESSAGE);
-                    if (ex.getCause() != null) ex.getCause().printStackTrace();
-                } catch (InterruptedException ie) {
+                } 
+                catch (ExecutionException execException) {
+                    Throwable cause = execException.getCause();
+                    JOptionPane.showMessageDialog(TranscriptPanel.this, "Failed to generate transcript: " + (cause == null ? execException.getMessage() : cause.getMessage()), "Error", JOptionPane.ERROR_MESSAGE);
+                    if (execException.getCause() != null) execException.getCause().printStackTrace();
+                } catch (InterruptedException intException) {
                     JOptionPane.showMessageDialog(TranscriptPanel.this, "Operation interrupted", "Error", JOptionPane.ERROR_MESSAGE);
                     Thread.currentThread().interrupt();
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(TranscriptPanel.this, "Error saving transcript: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    e.printStackTrace();
+                } catch (Exception exception) {
+                    JOptionPane.showMessageDialog(TranscriptPanel.this, "Error saving transcript: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    exception.printStackTrace();
                 }
             }
         };
@@ -162,7 +133,7 @@ public class TranscriptPanel extends JPanel {
     }
 
     private void onOpenLast() {
-        if (lastGenerated == null || !lastGenerated.exists()) {
+        if (!lastGenerated.exists()||lastGenerated == null) {
             JOptionPane.showMessageDialog(this, "No generated transcript available.", "Info", JOptionPane.INFORMATION_MESSAGE);
             btnOpenLast.setEnabled(false);
             return;
@@ -170,12 +141,14 @@ public class TranscriptPanel extends JPanel {
         try {
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().open(lastGenerated);
-            } else {
+            } 
+            else {
                 JOptionPane.showMessageDialog(this, "Opening files is not supported on this platform.\nFile is at: " + lastGenerated.getAbsolutePath(), "Unsupported", JOptionPane.WARNING_MESSAGE);
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to open file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
+        } 
+        catch (Exception exception) {
+            JOptionPane.showMessageDialog(this, "Failed to open file: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            exception.printStackTrace();
         }
     }
 }

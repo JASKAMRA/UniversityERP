@@ -1,31 +1,33 @@
 package edu.univ.erp.ui.admin;
-
 import edu.univ.erp.service.AdminService;
 import edu.univ.erp.service.AdminServiceImpl;
 import edu.univ.erp.ui.common.MainFrame;
 import edu.univ.erp.ui.util.CurrentSession; 
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class AdminDashboardPanel extends JPanel {
     private final AdminService adminService = new AdminServiceImpl();
-    private JButton CreateStudent_button;private JButton CreateCourse_Button;private JButton Maintenance_button;private JLabel LabelStatus;    
+    private JButton CreateStudent_btn;
+    private JLabel LabelStatus;    
+    private JButton CreateCourse_btn;
+    private JButton Maintenance_btn;
    
     public AdminDashboardPanel() {
-        INIT();LoadData(); 
+        INIT();
+        LoadData(); 
     }
 
-    private void styleButton(JButton button) {
-        button.setFont(new Font("Arial", Font.PLAIN, 14));
-        button.setPreferredSize(new Dimension(250, 40));
-        button.setMinimumSize(new Dimension(250, 40));
-        button.setFocusPainted(false); 
-        button.setBackground(new Color(230, 240, 255)); 
-        button.setForeground(Color.BLACK);
+    private void styleButton(JButton btn) {
+        btn.setFont(new Font("Arial", Font.PLAIN, 14));
+        btn.setMinimumSize(new Dimension(250, 40));
+        btn.setPreferredSize(new Dimension(250, 40));
+        btn.setFocusPainted(false); 
+        btn.setForeground(Color.BLACK);
+        btn.setBackground(new Color(230, 240, 255)); 
     
-        button.setBorder(BorderFactory.createCompoundBorder(
+        btn.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(150, 180, 255), 1),
             BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
@@ -35,70 +37,69 @@ public class AdminDashboardPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
         setBorder(new EmptyBorder(20, 20, 20, 20));
-//
-        JLabel title = new JLabel("Administrator Dashboard🎓");
+        JLabel title=new JLabel("Administrator Dashboard🎓");
         title.setFont(new Font("Arial", Font.BOLD, 24));
         title.setBorder(new EmptyBorder(0, 0, 20, 0)); 
         title.setHorizontalAlignment(SwingConstants.LEFT);
         add(title, BorderLayout.NORTH);
-        JPanel Panel_centre = new JPanel();
+        JPanel Panel_centre=new JPanel();
         Panel_centre.setLayout(new GridBagLayout());
         Panel_centre.setBackground(Color.WHITE);
 
         GridBagConstraints Constraint = new GridBagConstraints();
-        Constraint.insets = new Insets(15 / 2, 15, 15 / 2, 15);
-        Constraint.fill = GridBagConstraints.HORIZONTAL;
-        Constraint.gridx = 0;
-        Constraint.weightx = 1.0;
+        Constraint.insets=new Insets(15 / 2, 15, 15 / 2, 15);
+        Constraint.fill=GridBagConstraints.HORIZONTAL;
+        Constraint.gridx=0;
+        Constraint.weightx=1.0;
 
-        CreateStudent_button = new JButton("Create Student user");
-        Maintenance_button = new JButton("Toggle Maintanence");
-        CreateCourse_Button = new JButton("Create Section and course"); 
-        styleButton(CreateStudent_button);
-        styleButton(CreateCourse_Button);
-        styleButton(Maintenance_button);
-        Constraint.gridy = 0;Panel_centre.add(CreateStudent_button, Constraint);
-        Constraint.gridy++;Panel_centre.add(CreateCourse_Button, Constraint);
-        Constraint.gridy++;Panel_centre.add(Maintenance_button, Constraint);
+        CreateStudent_btn=new JButton("Create Student user");
+        Maintenance_btn=new JButton("Toggle Maintanence");
+        CreateCourse_btn=new JButton("Create Section and course"); 
+        styleButton(CreateStudent_btn);
+        styleButton(CreateCourse_btn);
+        styleButton(Maintenance_btn);
+        Constraint.gridy=0;Panel_centre.add(CreateStudent_btn, Constraint);
+        Constraint.gridy++;Panel_centre.add(CreateCourse_btn, Constraint);
+        Constraint.gridy++;Panel_centre.add(Maintenance_btn, Constraint);
      
-        JPanel Panel_consisting_all = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel Panel_consisting_all=new JPanel(new FlowLayout(FlowLayout.CENTER));
         Panel_consisting_all.add(Panel_centre);
         Panel_consisting_all.setBackground(Color.WHITE);
         add(Panel_consisting_all, BorderLayout.CENTER);
-        LabelStatus = new JLabel("Status: ready");
+        LabelStatus=new JLabel("Status: ready");
         LabelStatus.setFont(LabelStatus.getFont().deriveFont(Font.ITALIC, 12f));
         LabelStatus.setBorder(new EmptyBorder(20, 0, 0, 0));
         add(LabelStatus, BorderLayout.SOUTH);  
-        CreateStudent_button.addActionListener(e -> Create_Student_DIALOG());
-        CreateCourse_Button.addActionListener(e -> Create_Course_Section_DALOG());
-        Maintenance_button.addActionListener(e -> MaintenancePanel());
+        CreateStudent_btn.addActionListener(e -> Create_Student_DIALOG());
+        CreateCourse_btn.addActionListener(e -> Create_Course_Section_DALOG());
+        Maintenance_btn.addActionListener(e -> MaintenancePanel());
     }
 
-    
-    private void Create_Course_Section_DALOG() {
-     
+    private void Create_Student_DIALOG() { // check 
         Window owner = SwingUtilities.getWindowAncestor(this);
-        CreateCourseSectionDialog dialogue = new CreateCourseSectionDialog(owner, adminService);
+        CreateStudentDialog dialog = new CreateStudentDialog(owner, adminService);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+        if (!dialog.isSucceeded()) {
+            return;
+        }
+        LabelStatus.setText("Created student user: " + dialog.getCreatedUserId());
+    }
+    
+    private void Create_Course_Section_DALOG() { // check
+        Window owner=SwingUtilities.getWindowAncestor(this);
+        CreateCourseSectionDialog dialogue=new CreateCourseSectionDialog(owner, adminService);
         dialogue.setLocationRelativeTo(this);
         dialogue.setVisible(true);
-        if (dialogue.isSucceeded()) {
-            LabelStatus.setText("Created section id: " + dialogue.getCreatedSectionId());
+        if (!dialogue.isSucceeded()) {
+            return;
         }
-    }
-
-    private void Create_Student_DIALOG() {
-        Window owner = SwingUtilities.getWindowAncestor(this);
-        CreateStudentDialog dlg = new CreateStudentDialog(owner, adminService);
-        dlg.setLocationRelativeTo(this);
-        dlg.setVisible(true);
-        if (dlg.isSucceeded()) {
-            LabelStatus.setText("Created student user: " + dlg.getCreatedUserId());
-        }
+        LabelStatus.setText("Created section id: " + dialogue.getCreatedSectionId());
     }
 
 
-    private void MaintenancePanel() {
-   
+
+    private void MaintenancePanel() {    // check
         Window owner=SwingUtilities.getWindowAncestor(this);
         MaintenancePanel Maintenance_Panel=new MaintenancePanel(adminService);
         JDialog dialogue=new JDialog(owner, "Maintenance", Dialog.ModalityType.APPLICATION_MODAL);
@@ -107,32 +108,36 @@ public class AdminDashboardPanel extends JPanel {
         dialogue.setLocationRelativeTo(this);
         dialogue.setVisible(true);
         try {
-            boolean On=adminService.IS_Maintenance_on();
+            boolean On=adminService.is_Maintenance_on();
             CurrentSession.get().SetMant(On);
-            if (MainFrame.getInstance()!=null) {
-                MainFrame.getInstance().togglemantainenceON(On);
+            MainFrame frame = MainFrame.getInstance();
+            if (frame!=null){
+                frame.togglemantainenceON(On);
             }
-            if(On){
-                LabelStatus.setText("Maintenance now ON");
-            }else{
+            if(!On){
                 LabelStatus.setText("Maintenance now OFF");
             }
-        }catch(Exception ex){
+            else{
+                LabelStatus.setText("Maintenance now ON");
+            }
+        }
+        catch(Exception exception){
             LabelStatus.setText("Maintenance: (Unknown)");
         }
     }
 
     public void LoadData() {
- 
         try{
-            boolean On=adminService.IS_Maintenance_on();
-            if(On){
-                LabelStatus.setText("Maintenance now ON");
-            }else{
+            boolean On=adminService.is_Maintenance_on();
+            if(!On){
                 LabelStatus.setText("Maintenance now OFF");
             }
+            else{
+                LabelStatus.setText("Maintenance now ON");
+            }
 
-        }catch(Exception ex) {
+        }
+        catch(Exception exception) {
             LabelStatus.setText("Maintenance: [ERROR]");
         }
     }

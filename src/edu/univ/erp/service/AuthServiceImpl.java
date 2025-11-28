@@ -1,9 +1,7 @@
 package edu.univ.erp.service;
-
 import edu.univ.erp.data.Dao.UserDao;
 import edu.univ.erp.domain.User;
 import edu.univ.erp.auth.PasswordUtil;
-
 import java.sql.SQLException;
 
 public class AuthServiceImpl implements AuthService {
@@ -19,18 +17,21 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean changePassword(String username, String oldPassword, String newPassword) throws Exception {
-        if (username==null||username.trim().isEmpty()) {
+        if (username.trim().isEmpty() || username==null) {
             return false;
-        }User user;
+        }
+        User user;
         try {
-            user = userDao.Find_From_Username(username);
-        }catch (SQLException ex) {
-            throw ex;
-        }if(user==null){
+            user=userDao.Find_From_Username(username);
+        }
+        catch (SQLException exception) {
+            throw exception;
+        }
+        if(user==null){
             return false;
         }
         String Store_hash=user.GetHashPass();
-        if (Store_hash==null||Store_hash.isEmpty()) {
+        if (Store_hash.isEmpty()||Store_hash==null) {
             throw new IllegalStateException("No password set on the account. Contact admin.");
         }
         boolean Result=PasswordUtil.verify(oldPassword, Store_hash);
@@ -41,8 +42,9 @@ public class AuthServiceImpl implements AuthService {
         try {
             userDao.UPDATE_PASS(user.GetID(), newHash);
             return (true); 
-        } catch (SQLException ex) {
-            throw ex;
+        } 
+        catch (SQLException exception) {
+            throw exception;
         }
     }
 }

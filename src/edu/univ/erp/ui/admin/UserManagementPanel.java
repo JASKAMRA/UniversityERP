@@ -1,8 +1,6 @@
 package edu.univ.erp.ui.admin;
-
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.service.AdminServiceImpl;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -11,10 +9,6 @@ import java.awt.*;
 import java.sql.*;
 import java.util.Vector;
 
-/**
- * Admin Panel: Manage all system users.
- * (HTML REMOVED)
- */
 public class UserManagementPanel extends JPanel {
 
     private JTable table;
@@ -29,95 +23,93 @@ public class UserManagementPanel extends JPanel {
 
     private final AdminServiceImpl adminService = new AdminServiceImpl();
 
-    private static final int PADDING = 20;
-    private static final int GAP = 12;
-    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 20);
-    private static final Dimension BUTTON_SIZE = new Dimension(170, 35);
-    private static final Color PRIMARY_COLOR = new Color(70, 130, 180);
-
     public UserManagementPanel() {
         initUI();
         loadUsers("ALL");
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(GAP, GAP));
-        setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
+        setLayout(new BorderLayout(12, 12));
+        setBorder(new EmptyBorder(20, 20, 20, 20));
         setBackground(Color.WHITE);
 
-        JLabel title = new JLabel("System User Management");
-        title.setFont(TITLE_FONT);
-        title.setBorder(new EmptyBorder(0, 0, GAP, 0));
+        JLabel title=new JLabel("System User Management");
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setBorder(new EmptyBorder(0, 0, 12, 0));
         add(title, BorderLayout.NORTH);
 
-        model = new DefaultTableModel(
+        model=new DefaultTableModel(
                 new Object[]{"User ID", "Username", "Role", "Status"}, 0
-        ) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+        ) 
+        {
+            @Override public boolean isCellEditable(int r, int c) { 
+                return false; 
+            }
         };
 
-        table = new JTable(model);
+        table=new JTable(model);
         table.setRowHeight(25);
         table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        add(new JScrollPane(table), 
+        BorderLayout.CENTER);
 
-        JPanel right = new JPanel(new GridBagLayout());
-        right.setBackground(Color.WHITE);
-        right.setBorder(BorderFactory.createTitledBorder(
+        JPanel r=new JPanel(new GridBagLayout());
+        r.setBackground(Color.WHITE);
+        r.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.LIGHT_GRAY),
                 "User Actions",
                 TitledBorder.LEFT,
                 TitledBorder.TOP,
                 new Font("Arial", Font.BOLD, 12),
-                PRIMARY_COLOR));
+                new Color(70, 130, 180)));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.gridx = 0;
+        GridBagConstraints gbc=new GridBagConstraints();
+        gbc.insets=new Insets(5, 5, 5, 5);
+        gbc.fill=GridBagConstraints.HORIZONTAL;
+        gbc.gridx=0;
 
-        cbRoleFilter = new JComboBox<>(new String[]{"ALL", "STUDENT", "INSTRUCTOR", "ADMIN"});
-        cbRoleFilter.setPreferredSize(BUTTON_SIZE);
-        gbc.gridy = 0;
-        right.add(cbRoleFilter, gbc);
+        cbRoleFilter=new JComboBox<>(new String[]{"ALL", "STUDENT", "INSTRUCTOR", "ADMIN"});
+        cbRoleFilter.setPreferredSize(new Dimension(170, 35));
+        gbc.gridy=0;
+        r.add(cbRoleFilter, gbc);
 
-        btnRefresh = new JButton("Refresh List");
+        btnRefresh=new JButton("Refresh List");
         styleButton(btnRefresh, Color.LIGHT_GRAY, Color.BLACK);
-        gbc.gridy = 1;
-        right.add(btnRefresh, gbc);
+        gbc.gridy=1;
+        r.add(btnRefresh, gbc);
 
-        gbc.gridy = 2;
-        right.add(Box.createVerticalStrut(GAP), gbc);
+        gbc.gridy=2;
+        r.add(Box.createVerticalStrut(12), gbc);
 
-        btnCreateInstructor = new JButton("Create Instructor");
-        styleButton(btnCreateInstructor, new Color(180, 220, 255), PRIMARY_COLOR);
+        btnCreateInstructor=new JButton("Create Instructor");
+        styleButton(btnCreateInstructor, new Color(180, 220, 255), new Color(70, 130, 180));
         gbc.gridy = 3;
-        right.add(btnCreateInstructor, gbc);
+        r.add(btnCreateInstructor, gbc);
 
-        btnActivate = new JButton("Activate User");
+        btnActivate=new JButton("Activate User");
         styleButton(btnActivate, new Color(220, 255, 220), Color.GREEN.darker());
-        gbc.gridy = 4;
-        right.add(btnActivate, gbc);
+        gbc.gridy=4;
+        r.add(btnActivate, gbc);
 
-        btnDeactivate = new JButton("Deactivate User");
+        btnDeactivate=new JButton("Deactivate User");
         styleButton(btnDeactivate, new Color(255, 220, 220), Color.RED.darker());
-        gbc.gridy = 5;
-        right.add(btnDeactivate, gbc);
+        gbc.gridy=5;
+        r.add(btnDeactivate, gbc);
 
-        gbc.gridy = 6;
-        right.add(Box.createVerticalStrut(GAP), gbc);
+        gbc.gridy=6;
+        r.add(Box.createVerticalStrut(12), gbc);
 
-        btnDeleteUser = new JButton("Delete User");
+        btnDeleteUser=new JButton("Delete User");
         styleButton(btnDeleteUser, new Color(255, 180, 180), Color.RED);
-        gbc.gridy = 7;
-        right.add(btnDeleteUser, gbc);
+        gbc.gridy=7;
+        r.add(btnDeleteUser, gbc);
 
-        gbc.gridy = 8;
-        gbc.weighty = 1;
-        right.add(Box.createVerticalGlue(), gbc);
+        gbc.gridy=8;
+        gbc.weighty=1;
+        r.add(Box.createVerticalGlue(), gbc);
 
-        add(right, BorderLayout.EAST);
+        add(r, BorderLayout.EAST);
 
         cbRoleFilter.addActionListener(e -> loadUsers(cbRoleFilter.getSelectedItem().toString()));
         btnRefresh.addActionListener(e -> loadUsers(cbRoleFilter.getSelectedItem().toString()));
@@ -128,16 +120,14 @@ public class UserManagementPanel extends JPanel {
     }
 
     private void styleButton(JButton b, Color bg, Color fg) {
-        b.setPreferredSize(BUTTON_SIZE);
+        b.setPreferredSize(new Dimension(170, 35));
         b.setBackground(bg);
         b.setForeground(fg);
         b.setFocusPainted(false);
     }
 
 
-    // ------------------------------------------------------------------
-    // LOAD USERS
-    // ------------------------------------------------------------------
+   
     private void loadUsers(String roleFilter) {
         model.setRowCount(0);
 
@@ -163,7 +153,8 @@ public class UserManagementPanel extends JPanel {
                     model.addRow(row);
                 }
             }
-        } catch (Exception ex) {
+        } 
+        catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Failed to load users.", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -183,9 +174,7 @@ public class UserManagementPanel extends JPanel {
     }
 
 
-    // ------------------------------------------------------------------
-    //   ACTIVATE / DEACTIVATE
-    // ------------------------------------------------------------------
+
     private void changeStatus(String newStatus) {
         String uid = selectedUserId();
         String role = selectedRole();
@@ -219,9 +208,7 @@ public class UserManagementPanel extends JPanel {
         }
     }
 
-    // ------------------------------------------------------------------
-    // DELETE USER
-    // ------------------------------------------------------------------
+
     private void deleteSelectedUser() {
         String uid = selectedUserId();
         String username = selectedUsername();
@@ -245,52 +232,51 @@ public class UserManagementPanel extends JPanel {
                 JOptionPane.WARNING_MESSAGE
         );
 
-        if (confirm != JOptionPane.YES_OPTION) return;
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
 
         try {
             deleteProfile(uid);
 
-            try (Connection conn = DBConnection.getAuthConnection();
-                 PreparedStatement ps = conn.prepareStatement(
+            try (Connection connect= DBConnection.getAuthConnection();
+                 PreparedStatement prepStatement= connect.prepareStatement(
                          "DELETE FROM users_auth WHERE user_id = ?")) {
-                ps.setString(1, uid);
-                ps.executeUpdate();
+                prepStatement.setString(1, uid);
+                prepStatement.executeUpdate();
             }
 
             JOptionPane.showMessageDialog(this, "User deleted: " + username);
             loadUsers(cbRoleFilter.getSelectedItem().toString());
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } 
+        catch (Exception exception) {
+            exception.printStackTrace();
             JOptionPane.showMessageDialog(this, "Delete failed.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void deleteProfile(String uid) {
-        try (Connection conn = DBConnection.getStudentConnection()) {
+        try (Connection connect = DBConnection.getStudentConnection()) {
 
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM students WHERE user_id = ?")) {
-                ps.setString(1, uid);
-                ps.executeUpdate();
+            try (PreparedStatement prepStatement = connect.prepareStatement("DELETE FROM students WHERE user_id = ?")) {
+                prepStatement.setString(1, uid);
+                prepStatement.executeUpdate();
             }
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM instructors WHERE user_id = ?")) {
-                ps.setString(1, uid);
-                ps.executeUpdate();
+            try (PreparedStatement prepStatement = connect.prepareStatement("DELETE FROM instructors WHERE user_id = ?")) {
+                prepStatement.setString(1, uid);
+                prepStatement.executeUpdate();
             }
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM admins WHERE user_id = ?")) {
-                ps.setString(1, uid);
-                ps.executeUpdate();
+            try (PreparedStatement prepStatement = connect.prepareStatement("DELETE FROM admins WHERE user_id = ?")) {
+                prepStatement.setString(1, uid);
+                prepStatement.executeUpdate();
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
     }
 
-
-    // ------------------------------------------------------------------
-    // CREATE INSTRUCTOR
-    // ------------------------------------------------------------------
     private void openCreateInstructorDialog() {
 
         JTextField tfUser = new JTextField(15);
@@ -299,12 +285,12 @@ public class UserManagementPanel extends JPanel {
         JTextField tfEmail = new JTextField(15);
         JTextField tfDept = new JTextField(15);
 
-        JPanel p = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 6, 6, 6);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel p=new JPanel(new GridBagLayout());
+        GridBagConstraints gbc=new GridBagConstraints();
+        gbc.insets=new Insets(6, 6, 6, 6);
+        gbc.fill=GridBagConstraints.HORIZONTAL;
 
-        int row = 0;
+        int row=0;
 
         gbc.gridx = 0; gbc.gridy = row++; p.add(new JLabel("Username:"), gbc);
         gbc.gridx = 1; p.add(tfUser, gbc);
@@ -328,7 +314,9 @@ public class UserManagementPanel extends JPanel {
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE);
 
-        if (res != JOptionPane.OK_OPTION) return;
+        if (res != JOptionPane.OK_OPTION) {
+            return;
+        }
 
         String username = tfUser.getText().trim();
         String password = new String(tfPass.getPassword());
@@ -336,7 +324,7 @@ public class UserManagementPanel extends JPanel {
         String email = tfEmail.getText().trim();
         String dept = tfDept.getText().trim();
 
-        if (username.isEmpty() || password.isEmpty() || name.isEmpty()) {
+        if ( password.isEmpty() || username.isEmpty()  || name.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Username, password & name are required.", "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -350,8 +338,9 @@ public class UserManagementPanel extends JPanel {
             protected Boolean doInBackground() {
                 try {
                     return adminService.createInstructor(username, password, name, email, dept);
-                } catch (Exception ex) {
-                    thrown = ex;
+                } 
+                catch (Exception exception) {
+                    thrown = exception;
                     return false;
                 }
             }
@@ -360,20 +349,22 @@ public class UserManagementPanel extends JPanel {
             protected void done() {
                 btnCreateInstructor.setEnabled(true);
                 try {
-                    boolean ok = get();
-                    if (ok) {
-                        JOptionPane.showMessageDialog(UserManagementPanel.this,
-                                "Instructor created successfully.");
-                        loadUsers(cbRoleFilter.getSelectedItem().toString());
-                    } else {
+                    boolean ok=get();
+                    if (!ok) {
                         JOptionPane.showMessageDialog(UserManagementPanel.this,
                                 "Failed: " + (thrown != null ? thrown.getMessage() : "Unknown error."),
                                 "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                            } 
+                            else {
+                                JOptionPane.showMessageDialog(UserManagementPanel.this,
+                                        "Instructor created successfully.");
+                                loadUsers(cbRoleFilter.getSelectedItem().toString());
+                            }
+                } 
+                catch (Exception exception) {
+                    exception.printStackTrace();
                     JOptionPane.showMessageDialog(UserManagementPanel.this,
-                            "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                            "Error: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };

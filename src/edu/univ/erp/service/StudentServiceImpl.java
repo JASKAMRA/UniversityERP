@@ -1,5 +1,4 @@
 package edu.univ.erp.service;
-
 import edu.univ.erp.access.AccessControl;
 import edu.univ.erp.data.DBConnection;
 import edu.univ.erp.data.Dao.CourseDao;
@@ -8,15 +7,12 @@ import edu.univ.erp.data.Dao.SectionDao;
 import edu.univ.erp.data.Dao.StudentDAO;
 import edu.univ.erp.data.Dao.GradeDao;
 import edu.univ.erp.data.Dao.InstructorDAO;
-
 import edu.univ.erp.domain.Course;
 import edu.univ.erp.domain.Enrollment;
 import edu.univ.erp.domain.Section;
 import edu.univ.erp.domain.Student;
-
 import edu.univ.erp.ui.util.CurrentSession;
 import edu.univ.erp.domain.Role;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
@@ -27,14 +23,14 @@ import java.util.*;
 
 public class StudentServiceImpl implements StudentService {
 
-    private final CourseDao courseDao = new CourseDao();
-    private final SectionDao sectionDao = new SectionDao();
-    private final EnrollmentDao enrollmentDao = new EnrollmentDao();
-    private final StudentDAO studentDao = new StudentDAO();
-    private final GradeDao gradeDao = new GradeDao();
-    private final InstructorDAO instructorDao = new InstructorDAO();
+    private final CourseDao courseDao=new CourseDao();
+    private final SectionDao sectionDao=new SectionDao();
+    private final EnrollmentDao enrollmentDao=new EnrollmentDao();
+    private final StudentDAO studentDao=new StudentDAO();
+    private final GradeDao gradeDao=new GradeDao();
+    private final InstructorDAO instructorDao=new InstructorDAO();
 
-    private static final Map<String, Integer> DAY_ORDER = new HashMap<>();
+    private static final Map<String, Integer> DAY_ORDER=new HashMap<>();
     static {
         DAY_ORDER.put("MONDAY", 1);
         DAY_ORDER.put("TUESDAY", 2);
@@ -98,10 +94,10 @@ public class StudentServiceImpl implements StudentService {
             }
             Connect.commit();
             return true;
-        } catch (Exception ex) {
+        } catch (Exception exception) {
             try {Connect.rollback();} 
             catch (Exception ex1) {}
-            throw ex;
+            throw exception;
         } finally {
             try { Connect.setAutoCommit(true); }
             catch (Exception ex) {}
@@ -109,28 +105,33 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public List<Object[]> GetReg(String userId) throws Exception {
-    Student Stu1=studentDao.findByUserId(userId);
-    if (Stu1==null)
+    Student Stud1=studentDao.findByUserId(userId);
+    if (Stud1==null){
         return Collections.emptyList();
-    String studentId=Stu1.GetStudentID();
+    }
+    String studentId=Stud1.GetStudentID();
     List<Enrollment> enrollments=enrollmentDao.findByStudent(studentId);
-    if (enrollments==null||enrollments.isEmpty()) 
+    if (enrollments.isEmpty()||enrollments==null){ 
         return Collections.emptyList();
+    }
     List<Object[]> R=new ArrayList<>();
     for (Enrollment e:enrollments) {
         Section sec=sectionDao.FindFromID(e.GetSectionID());
-        if (sec==null) 
+        if (sec==null){
             continue;
-        Course c=courseDao.findById(sec.GetCourseID());
-        String courseId=(c!=null) ? c.GetCourseID() : sec.GetCourseID();
+        }
+        Course crs=courseDao.findById(sec.GetCourseID());
+        String courseId=(crs!=null) ? crs.GetCourseID() : sec.GetCourseID();
         String DaysCSV=sec.GetDays();
         if (DaysCSV==null) {
             try {
                 DaysCSV=sec.GetDay() == null ? "" : sec.GetDay().name();
-            } catch (Exception ignore){
+            } 
+            catch (Exception ignore){
                 DaysCSV="";
             }
-        }R.add(new Object[]{
+        }
+        R.add(new Object[]{
             e.GetEnrollmentID(),courseId,sec.GetSectionID(),
             DaysCSV==null? "" : DaysCSV,
             sec.GetSemester(),
@@ -145,25 +146,28 @@ public class StudentServiceImpl implements StudentService {
         Role role=CurrentSession.get().getUsr().GetRole();
         if (!AccessControl.isActionAllowed(role, true)) {
             throw new IllegalStateException("Cant drop when in Mantanence mode");
-        }enrollmentDao.deleteEnrollment(enrollmentId); 
+        }
+        enrollmentDao.deleteEnrollment(enrollmentId); 
         return true;
     }
 
 @Override
     public List<Section> getTimeTable(String UserID) throws Exception {
-        Student Stu=studentDao.findByUserId(UserID);
-        if (Stu==null) {
+        Student Stud=studentDao.findByUserId(UserID);
+        if (Stud==null) {
             return Collections.emptyList();
         }
-        String studentId=Stu.GetStudentID();
-        List<Enrollment> enrolls=enrollmentDao.findByStudent(studentId);
-        if (enrolls==null||enrolls.isEmpty()){
+        String student_Id=Stud.GetStudentID();
+        List<Enrollment> enrolls=enrollmentDao.findByStudent(student_Id);
+        if (enrolls.isEmpty()||enrolls==null){
              return Collections.emptyList();
         }
-        List<Section> out = new ArrayList<>();
-        for (Enrollment e : enrolls) {
-            Section s = sectionDao.FindFromID(e.GetSectionID());
-            if (s != null) out.add(s);
+        List<Section> out=new ArrayList<>();
+        for (Enrollment enroll : enrolls) {
+            Section sec = sectionDao.FindFromID(enroll.GetSectionID());
+            if (sec != null) {
+                out.add(sec);
+            }
         }
 
         out.sort((a, b) -> {
@@ -179,7 +183,8 @@ public class StudentServiceImpl implements StudentService {
             String Bst = Check_string(b.GetStartTime());
             return 
             Ast.compareTo(Bst);
-        });return out;
+        });
+        return out;
     }
 
  private static String FirstDay_Csv(String csv) {
@@ -190,10 +195,11 @@ public class StudentServiceImpl implements StudentService {
              return "";
         return parts[0].trim().toUpperCase();
     }   
-private static String Check_string(String Str) {
-    if (Str != null) {
-        return Str; 
-    } else {
+private static String Check_string(String s) {
+    if (s != null) {
+        return s; 
+    } 
+    else {
         return "";
     }
 }
@@ -201,7 +207,7 @@ private String CsvEsc(String Str) {
     if (Str == null) {
         return "";
     }
-    if (Str.contains(",") || Str.contains("\"") || Str.contains("\n")) {
+    if ( Str.contains("\"") ||Str.contains(",") || Str.contains("\n")) {
         String Safe_str = Str.replace("\"", "\"\"");
         return "\"" + Safe_str + "\"";
     }
@@ -210,29 +216,25 @@ private String CsvEsc(String Str) {
 
 @Override
 public File CsvGeneration(String userId) throws Exception {
-    List<Object[]> registrations = GetReg(userId);
+    List<Object[]> registrations=GetReg(userId);
     File out_file = File.createTempFile("transcript_" + userId + "_", ".csv");
     try (PrintWriter printWriter = new PrintWriter(out_file)) {
         printWriter.println("Course,Section,Semester,Year,Component,Score,FinalGrade");
-        for (Object[] registration : registrations) { 
-            Integer enrollmentId = (Integer) registration[0];
-            String courseId = String.valueOf(registration[1]);
-            Integer sectionId = (Integer) registration[2];
-            String semester = String.valueOf(registration[4]);
-            List<GradeDao.GradeRow> grades = gradeDao.getGradesForEnrollment(enrollmentId);
+        for (Object[] reg : registrations) { 
+            Integer enrollment_Id = (Integer) reg[0];
+            String course_Id = String.valueOf(reg[1]);
+            Integer section_Id = (Integer) reg[2];
+            String sem = String.valueOf(reg[4]);
+            List<GradeDao.GradeRow> grades = gradeDao.getGradesForEnrollment(enrollment_Id);
             
             String commonFormat="%s,%d,%s,%s";
-            if (grades== null||grades.isEmpty()) {
-                printWriter.printf(commonFormat + ",%s,%s,%s%n",
-                    CsvEsc(courseId),sectionId,CsvEsc(semester), 
-                    "", 
-                    "", 
-                    "", 
-                    "");
-            } else{
+            if (grades.isEmpty()||grades== null) {
+                printWriter.printf(commonFormat + ",%s,%s,%s%n",CsvEsc(course_Id),section_Id,CsvEsc(sem), "", "", "", "");
+            } 
+            else{
                 for(GradeDao.GradeRow gr:grades) {
                     String scoreString=gr.SCORE==null? "" :gr.SCORE.toPlainString();
-                    printWriter.printf(commonFormat + ",%s,%s,%s%n",CsvEsc(courseId),sectionId,CsvEsc(semester),"",CsvEsc(gr.Comp),scoreString,CsvEsc(gr.Final_grd)
+                    printWriter.printf(commonFormat + ",%s,%s,%s%n",CsvEsc(course_Id),section_Id,CsvEsc(sem),"",CsvEsc(gr.Comp),scoreString,CsvEsc(gr.Final_grd)
                     );}}}}
     
     return out_file;
@@ -243,42 +245,48 @@ public File CsvGeneration(String userId) throws Exception {
     public String GetInstName_sec(Section Sec) throws Exception {
     if (Sec==null) {
         return "";
-    }String instValue=Sec.GetInstructorID();
-    if (instValue==null||instValue.trim().isEmpty()){
+    }
+    String instValue=Sec.GetInstructorID();
+    if (instValue.trim().isEmpty()||instValue==null){
         return "";
-    } return instructorDao.Find_InstnameFROMid_user(instValue);
+    } 
+    return instructorDao.Find_InstnameFROMid_user(instValue);
 }
 
 
 @Override
     public List<Object[]> getGrade(String UserID) throws Exception {
-    Student Stu=studentDao.findByUserId(UserID);
-    if (Stu==null) {
+    Student Stud=studentDao.findByUserId(UserID);
+    if (Stud==null) {
         return Collections.emptyList();
     }
-    String StuID=Stu.GetStudentID();
-    List<Enrollment> Enroll=enrollmentDao.findByStudent(StuID);
-    if (Enroll==null||Enroll.isEmpty()) {
+    String StudID=Stud.GetStudentID();
+    List<Enrollment> Enroll=enrollmentDao.findByStudent(StudID);
+    if (Enroll.isEmpty()||Enroll==null) {
         return Collections.emptyList();
     }
     List<Object[]> Res=new ArrayList<>();
-    for (Enrollment e : Enroll) {
+    for (Enrollment e : Enroll){
         int EnrollmentID=e.GetEnrollmentID();
         List<GradeDao.GradeRow> g=gradeDao.getGradesForEnrollment(EnrollmentID);
-        if (g==null||g.isEmpty()) {
+        if (g.isEmpty()||g==null) {
             Section section=sectionDao.FindFromID(e.GetSectionID());
             String courseId;
-            if (section==null) {
-                courseId="";
-            } else {
+            if (section!=null) {
                 courseId=section.GetCourseID();
+            } 
+            else {
+                courseId="";
             }
             Res.add(new Object[]{
                 courseId,e.GetSectionID(),"",null,""});
-        } else {
+        } 
+        else {
             for (GradeDao.GradeRow grade : g) {
                 Res.add(new Object[]{grade.CourseID,grade.SectionID,grade.Comp,grade.SCORE,grade.Final_grd});
-            }}}
+            }
+        }
+    }
     return Res;
 }
 

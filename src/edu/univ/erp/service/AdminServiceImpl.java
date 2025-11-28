@@ -1,100 +1,129 @@
 package edu.univ.erp.service;
-
 import edu.univ.erp.data.Dao.*;
 import edu.univ.erp.domain.User;
 import edu.univ.erp.domain.Student;
 import edu.univ.erp.access.*;
 import edu.univ.erp.domain.Role;
-
 import java.sql.SQLException;
-
 import edu.univ.erp.auth.PasswordUtil;
 
 public class AdminServiceImpl implements AdminService {
 
     private final SettingsDao settingsDao = new SettingsDao();
     private final UserDao userDao = new UserDao();
+    private final SectionDao sectionDao = new SectionDao();
     private final StudentDAO studentDao = new StudentDAO();
     private final CourseDao courseDao = new CourseDao();
     private final InstructorDAO instructorDao = new InstructorDAO();
-    private final SectionDao sectionDao = new SectionDao();
 
     @Override
     public String CreateStuUser(String User_Name, String pass,String name,String email,String rollNo,Integer year,String program) throws SQLException{
-        if(User_Name==null||pass==null){
+        if(pass==null||User_Name==null){
             return null;
         }
+
         User existing=userDao.Find_From_Username(User_Name);
-        if(existing != null){
+
+        if(existing!=null){
             return null;
         }
-        String userId = java.util.UUID.randomUUID().toString();
-        String hash = PasswordUtil.hash(pass);
+
+        String userId=java.util.UUID.randomUUID().toString();
+        String hash=PasswordUtil.hash(pass);
         
-        User u = new User();
-        u.SetID(userId);u.SetUsername(User_Name);u.SetRole(Role.STUDENT);u.SetHashPass(hash);u.SetStatus("active");
+        User user=new User();
+        user.SetID(userId);
+        user.SetUsername(User_Name);
+        user.SetRole(Role.STUDENT);
+        user.SetStatus("active");
+        user.SetHashPass(hash);
 
-        Student s = new Student();
-        s.SetID(userId);s.SetRollNum(rollNo);s.SetName(name);s.SetEmail(email);s.SetYear(year);s.SetProgram(program);
+        Student student=new Student();
+        student.SetID(userId);
+        student.SetRollNum(rollNo);
+        student.SetName(name);
+        student.SetEmail(email);
+        student.SetYear(year);
+        student.SetProgram(program);
 
-        try {userDao.createUser(u); 
+        try {
+            userDao.createUser(user); 
         } 
-        catch (Exception ex){
-            ex.printStackTrace();
+        catch (Exception exception){
+            exception.printStackTrace();
             return null;
         }
-        int rows=studentDao.insertStudent(s); 
-        if (rows!=1) {
+        int row=studentDao.insertStudent(student);
+
+        if (row!=1) {
             try { 
                 userDao.deleteById(userId);
-         }
-        catch (Exception ex) { 
-            ex.printStackTrace();
-        }return null;
-        }return userId;
+            }
+        catch (Exception exception) { 
+            exception.printStackTrace();
+        }
+        return null;
+        }
+        return userId;
     }
     @Override
-    public boolean IS_Maintenance_on()throws SQLException {
+    public boolean is_Maintenance_on() throws SQLException {
         return AccessControl.isMaintenance();
     }
 
     @Override
     public int CreateCandS(String courseId, String courseTitle, Integer credits, String departmentId, int capacity, String day, String semester, int year, String instructorUserId) throws SQLException {
-        if (courseId == null || instructorUserId == null) return -1;
-        java.sql.Connection Connect = null;
+        if (instructorUserId==null || courseId==null) {
+            return -1;
+        }
+        java.sql.Connection Connect=null;
         try {
-            Connect = edu.univ.erp.data.DBConnection.getStudentConnection();Connect.setAutoCommit(false);
-            if (courseDao.findById(courseId) == null) {
+            Connect=edu.univ.erp.data.DBConnection.getStudentConnection();Connect.setAutoCommit(false);
+            if (courseDao.findById(courseId)==null) {
                 int Crows=courseDao.createCourse(Connect, courseId, courseTitle, credits, departmentId);
                 if (Crows != 1){
                     Connect.rollback();
                     return -1;
                 }
             }
-    //creating instructor id
-            Integer instructorId = null;    
+
+            Integer instructorId=null;    
             try {
-                instructorId = instructorDao.findByUserId(instructorUserId) != null ?
+                instructorId=instructorDao.findByUserId(instructorUserId) != null ?
                         Integer.parseInt(instructorDao.findByUserId(instructorUserId).GetID()) : null;
-            } catch (NumberFormatException nfe) {
+            }
+            catch (NumberFormatException numformatException) {
                 instructorId = null;
             }
-            if (instructorId == null) { Connect.rollback(); return -1; }
-//creatting section
-            int sectionId = sectionDao.createSection(Connect, courseId, instructorId, day, capacity, semester, year);
-            if (sectionId <= 0) { Connect.rollback(); return -1; }
+            if (instructorId == null) { 
+                Connect.rollback();
+                 return -1; 
+            }
 
+            int sectionId=sectionDao.createSection(Connect, courseId, instructorId, day, capacity, semester, year);
+            if (sectionId <= 0) { 
+                Connect.rollback(); 
+                return -1; 
+            }
             Connect.commit();
             return sectionId;
-        } catch (Exception ex) {
-            if (Connect != null) try {
-                Connect.rollback(); }
+        } 
+        catch (Exception exception) {
+            if (Connect!=null){ 
+                try {
+                Connect.rollback(); 
+            }
             catch (Exception ignored) {}
-            ex.printStackTrace();
+        }
+            exception.printStackTrace();
             return -1;
-        } finally {
+        }
+         finally {
             if (Connect != null) 
-            try { Connect.setAutoCommit(true); Connect.close(); } 
+            try {
+             Connect.setAutoCommit(true); 
+             Connect.close(); 
+            } 
             catch (Exception ignored) {}
         }
     }
@@ -106,48 +135,50 @@ public class AdminServiceImpl implements AdminService {
         return true;
     }
     public boolean createInstructor(String username, String rawPassword, String name, String email, String department) {
-    UserDao userDao = new UserDao();            // or inject existing instance
-    InstructorDAO instructorDao = new InstructorDAO();
+    UserDao userDao=new UserDao();           
+    InstructorDAO instructorDao=new InstructorDAO();
 
-    String newUserId = java.util.UUID.randomUUID().toString();
-    String pwHash = PasswordUtil.hash(rawPassword);
+    String newUserId=java.util.UUID.randomUUID().toString();
+    String passHash=PasswordUtil.hash(rawPassword);
 
-    // 1) create auth user (auth_db)
-    User u = new User();
-    u.SetID(newUserId);
-    u.SetUsername(username);
-    u.SetHashPass(pwHash);
-    u.SetRole(Role.INSTRUCTOR); // ensure Role enum has INSTRUCTOR
+    User user=new User();
+    user.SetID(newUserId);
+    user.SetUsername(username);
+    user.SetHashPass(passHash);
+    user.SetRole(Role.INSTRUCTOR); 
 
     try {
-        userDao.createUser(u);
-    } catch (SQLException ex) {
-        ex.printStackTrace();
+        userDao.createUser(user);
+    } 
+    catch (SQLException exception) {
+        exception.printStackTrace();
         return false;
     }
 
-    // 2) create instructor row (student DB)
-    edu.univ.erp.domain.Instructor ins = new edu.univ.erp.domain.Instructor();
+    edu.univ.erp.domain.Instructor ins=new edu.univ.erp.domain.Instructor();
     ins.SetUserID(newUserId);
+    ins.SetEmail(email);
     ins.Setdepartment(department);
     ins.SetName(name);
-    ins.SetEmail(email);
 
     try {
         boolean ok = instructorDao.insertInstructor(ins);
-        if (ok) return true;
-
-        // cleanup: remove created auth user if instructor insert failed
-        try { userDao.deleteById(newUserId); } catch (Exception ignore) {}
+        if (ok){ 
+            return true;
+        }
+        try { 
+            userDao.deleteById(newUserId); 
+        } 
+        catch (Exception ignore) {}
         return false;
-    } catch (SQLException ex) {
-        ex.printStackTrace();
-        // cleanup
-        try { userDao.deleteById(newUserId); } catch (Exception ignore) {}
+    } 
+    catch (SQLException exceptionb) {
+        exceptionb.printStackTrace();
+        try {
+             userDao.deleteById(newUserId); 
+        } 
+        catch (Exception ignore) {}
         return false;
     }
-}
-
-
-    
+}   
 }

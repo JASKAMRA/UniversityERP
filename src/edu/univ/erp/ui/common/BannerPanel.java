@@ -25,15 +25,15 @@ public class BannerPanel extends JPanel {
     label.setText(text);
 }
     public void SetMantanence(boolean on) {
-        if (on) {
-            setLabelText(labels,"⚠️Caution!!!!  Sytem is under Maintenance Mode, You cannot preform any Write operations!");
-            SetBg(labels,new Color(180, 0, 0));
-            labels.setForeground(Color.YELLOW); 
-        }
-        else {
+        if (!on) {
             setLabelText(labels," ");
             SetBg(labels,new Color(220, 220, 220));
             labels.setForeground(Color.BLACK);
+        }
+        else {
+            setLabelText(labels,"⚠️Caution!!!!  Sytem is under Maintenance Mode, You cannot preform any Write operations!");
+            SetBg(labels,new Color(180, 0, 0));
+            labels.setForeground(Color.YELLOW); 
             
         } 
         revalidate(); 

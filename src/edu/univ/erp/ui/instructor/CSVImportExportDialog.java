@@ -157,7 +157,7 @@ public class CSVImportExportDialog extends JDialog {
             return;
         }
 
-        if (!instructorService.IsInstructorIn(instructorUserId, sectionId)) {
+        if (!instructorService.isInstructorIn(instructorUserId, sectionId)) {
             tLog.append("Operation denied: Instructor does not own this section.\n");
             JOptionPane.showMessageDialog(this, "Not your section!", "Permission denied", JOptionPane.ERROR_MESSAGE);
             return;
@@ -173,7 +173,7 @@ public class CSVImportExportDialog extends JDialog {
 
     private void doExport(File file) {
         int rowsExported = 0;
-        try (Connection conn = DBConnection.getStudentConnection()) {
+        try (Connection connect = DBConnection.getStudentConnection()) {
   
             String sql =
                     "SELECT e.enrollment_id, st.roll_no, st.name, g.component, g.score " +
@@ -183,15 +183,13 @@ public class CSVImportExportDialog extends JDialog {
                     "WHERE e.section_id = ? " +
                     "ORDER BY st.roll_no, g.component";
 
-            PreparedStatement prepStatement = conn.prepareStatement(sql);
+            PreparedStatement prepStatement = connect.prepareStatement(sql);
             prepStatement.setInt(1, sectionId);
 
             ResultSet resultSet = prepStatement.executeQuery();
 
             try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-
                 pw.println("enrollment_id,roll_no,name,component,score");
-
                 while (resultSet.next()) {
                     pw.printf("%s,%s,%s,%s,%s%n",
                             resultSet.getInt("enrollment_id"),
@@ -203,7 +201,6 @@ public class CSVImportExportDialog extends JDialog {
                     rowsExported++;
                 }
             }
-
             tLog.append(String.format("Export complete. %d rows written to %s.\n", rowsExported, file.getName()));
             JOptionPane.showMessageDialog(this, String.format("Export successful! %d records exported.", rowsExported));
 
@@ -218,15 +215,15 @@ public class CSVImportExportDialog extends JDialog {
         int successfulSaves=0;
         
         try (BufferedReader bufferRead = new BufferedReader(new FileReader(file));
-             Connection conn = DBConnection.getStudentConnection()) {
+             Connection connect = DBConnection.getStudentConnection()) {
 
-            String header = bufferRead.readLine(); 
-            if (header == null) {
+            String header=bufferRead.readLine(); 
+            if (header==null) {
                 tLog.append("Error: Input file is empty.\n");
                 JOptionPane.showMessageDialog(this, "Input file is empty.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            if (!(header.contains("enrollment_id") && header.contains("component") && header.contains("score"))) {
+            if (header.contains("component") &&!(header.contains("enrollment_id")  && header.contains("score"))) {
                  tLog.append("Error: CSV header is missing required fields (enrollment_id, component, score).\n");
                  JOptionPane.showMessageDialog(this, "CSV header is invalid. Must contain enrollment_id, component, and score.", "Error", JOptionPane.ERROR_MESSAGE);
                  return;
@@ -240,21 +237,23 @@ public class CSVImportExportDialog extends JDialog {
                 }
                 
                 try {
-                    String[] a = split(line);
-                    int enrollmentId = Integer.parseInt(a[0].trim());
-                    String comp = a[3].trim();
-                    String scoreStr = a[4].trim();
+                    String[] a=split(line);
+                    int enrollmentId=Integer.parseInt(a[0].trim());
+                    String comp=a[3].trim();
+                    String scoreStr=a[4].trim();
                     
-                    BigDecimal score = scoreStr.isEmpty() ? null : new BigDecimal(scoreStr);
+                    BigDecimal score=scoreStr.isEmpty() ? null : new BigDecimal(scoreStr);
                     
-                    boolean ok = instructorService.Save_Grade(enrollmentId, comp, score);
+                    boolean ok=instructorService.Save_Grade(enrollmentId, comp, score);
                     
-                    if (ok) {
-                        successfulSaves++;
-                    } else {
+                    if (!ok) {
                         tLog.append(String.format("Row %d: Failed to save (EnrollID %d, Comp %s). Check enrollment ID.\n", rowsRead, enrollmentId, comp));
                     }
-                } catch (NumberFormatException | ArrayIndexOutOfBoundsException ex) {
+                    else {
+                        successfulSaves++;
+                    }
+                } 
+                catch (NumberFormatException | ArrayIndexOutOfBoundsException exception) {
                     tLog.append(String.format("Row %d: Parsing error or missing data. Skipped line: %s\n", rowsRead, line.substring(0, Math.min(line.length(), 40)) + "..."));
                 }
             }
@@ -262,26 +261,27 @@ public class CSVImportExportDialog extends JDialog {
             tLog.append(String.format("Import complete. Read %d rows. Successfully saved/updated %d records.\n", rowsRead, successfulSaves));
             JOptionPane.showMessageDialog(this, String.format("Import finished. Successfully updated %d records.", successfulSaves));
 
-        } catch (Exception ex) {
-            tLog.append("Fatal error during import: " + ex.getMessage() + "\n");
-            JOptionPane.showMessageDialog(this, "Import failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } 
+        catch (Exception exception) {
+            tLog.append("Fatal error during import: " + exception.getMessage() + "\n");
+            JOptionPane.showMessageDialog(this, "Import failed: " + exception.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private String escape(String s) {
-        if (s == null){ 
+    private String escape(String str) {
+        if (str==null){ 
             return "";
         }
-        if (s.contains("\"") ||s.contains(",")  || s.contains("\n")){
-            return "\"" + s.replace("\"", "\"\"") + "\"";
+        if (str.contains("\"") || str.contains(",") || str.contains("\n")){
+            return "\"" + str.replace("\"", "\"\"") + "\"";
         }
-        return s;
+        return str;
     }
 
     private String[] split(String l) {
-        List<String> o = new ArrayList<>();
-        StringBuilder stringbuild = new StringBuilder();
-        boolean inQ = false;
+        List<String> o=new ArrayList<>();
+        StringBuilder stringbuild=new StringBuilder();
+        boolean inQ=false;
 
         for (char c : l.toCharArray()) {
             if (c == '"') inQ = !inQ;

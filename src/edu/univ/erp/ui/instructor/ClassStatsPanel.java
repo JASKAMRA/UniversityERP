@@ -22,10 +22,10 @@ public class ClassStatsPanel extends JPanel {
     private JButton btnRefresh;
 
     public ClassStatsPanel(InstructorService instructorService, String instructorUserId, int sectionId, String courseTitle) {
-        this.instructorService = instructorService;
-        this.courseTitle = courseTitle;
-        this.instructorUserId = instructorUserId;
-        this.sectionId = sectionId;
+        this.instructorService=instructorService;
+        this.courseTitle=courseTitle;
+        this.instructorUserId=instructorUserId;
+        this.sectionId=sectionId;
         init();
         loadStats();
     }
@@ -36,23 +36,21 @@ public class ClassStatsPanel extends JPanel {
         
         setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            "📊 Class Statistics — " + courseTitle + " (Section " + sectionId + ")",
-            TitledBorder.LEFT, TitledBorder.TOP,
-            new Font("Arial", Font.BOLD, 16),
-            new Color(25, 135, 84)
+            "📊 Class Statistics — " + courseTitle + " (Section " + sectionId + ")",TitledBorder.LEFT, TitledBorder.TOP,
+            new Font("Arial", Font.BOLD, 16), new Color(25, 135, 84)
         ));
 
-        JPanel statPanel = new JPanel(new GridBagLayout());
+        JPanel statPanel=new JPanel(new GridBagLayout());
         statPanel.setBackground(Color.WHITE);
-        GridBagConstraints constraint = new GridBagConstraints();
-        constraint.fill = GridBagConstraints.HORIZONTAL;
-        constraint.insets = new Insets(10 / 2, 10, 10 / 2, 10);
-        constraint.weightx = 1.0;
+        GridBagConstraints constraint=new GridBagConstraints();
+        constraint.fill=GridBagConstraints.HORIZONTAL;
+        constraint.insets=new Insets(10 / 2, 10, 10 / 2, 10);
+        constraint.weightx=1.0;
 
-        lblCount = createStatLabel("Count:", 0);
-        lblAvg = createStatLabel("Average:", 1);
-        lblMin = createStatLabel("Min Score:", 2);
-        lblMax = createStatLabel("Max Score:", 3);
+        lblCount=createStatLabel("Count:", 0);
+        lblAvg=createStatLabel("Average:", 1);
+        lblMin=createStatLabel("Min Score:", 2);
+        lblMax=createStatLabel("Max Score:", 3);
 
         statPanel.add(lblCount, getStatConstraints(0, 0));
         statPanel.add(lblAvg, getStatConstraints(1, 0));
@@ -61,13 +59,12 @@ public class ClassStatsPanel extends JPanel {
 
         add(statPanel, BorderLayout.NORTH);
 
-  
         taDistribution=new JTextArea(10, 40);
         taDistribution.setEditable(false);
         taDistribution.setFont(new Font("Monospaced", Font.PLAIN, 13));
         taDistribution.setBorder(BorderFactory.createTitledBorder("Grade Distribution"));
         
-        JScrollPane scrollP = new JScrollPane(taDistribution);
+        JScrollPane scrollP=new JScrollPane(taDistribution);
         add(scrollP, BorderLayout.CENTER);
 
         btnRefresh=new JButton("🔄 Refresh Statistics");
@@ -81,12 +78,12 @@ public class ClassStatsPanel extends JPanel {
     }
     
     private GridBagConstraints getStatConstraints(int x, int y) {
-        GridBagConstraints constraint = new GridBagConstraints();
-        constraint.gridx = x;
-        constraint.gridy = y;
-        constraint.weightx = 1.0;
-        constraint.fill = GridBagConstraints.HORIZONTAL;
-        constraint.insets = new Insets(5, 10, 5, 10);
+        GridBagConstraints constraint=new GridBagConstraints();
+        constraint.gridx=x;
+        constraint.gridy=y;
+        constraint.weightx=1.0;
+        constraint.fill=GridBagConstraints.HORIZONTAL;
+        constraint.insets=new Insets(5, 10, 5, 10);
         return constraint;
     }
 
@@ -97,7 +94,7 @@ public class ClassStatsPanel extends JPanel {
     
 
     public void loadStats() {
-        if (!instructorService.IsInstructorIn(instructorUserId, sectionId)) {
+        if (!instructorService.isInstructorIn(instructorUserId, sectionId)) {
             JOptionPane.showMessageDialog(this, "Not your section.", "Permission denied", JOptionPane.ERROR_MESSAGE);
             taDistribution.setText("Permission denied: You are not the instructor for this section.");
             return;
@@ -108,44 +105,43 @@ public class ClassStatsPanel extends JPanel {
         String getFinal = "SELECT score FROM grades WHERE enrollment_id = ? AND component = 'FINAL' LIMIT 1";
         String getAvg = "SELECT AVG(score) AS avg_score FROM grades WHERE enrollment_id = ? AND component <> 'FINAL'";
 
-        try (Connection conn = DBConnection.getStudentConnection();
-        PreparedStatement pFinal = conn.prepareStatement(getFinal);
-        PreparedStatement pEnroll = conn.prepareStatement(getEnrollments);
-             PreparedStatement pAvg = conn.prepareStatement(getAvg)) {
+        try (Connection connect=DBConnection.getStudentConnection();
+        PreparedStatement pFinal=connect.prepareStatement(getFinal);
+        PreparedStatement pEnroll=connect.prepareStatement(getEnrollments);
+        PreparedStatement pAvg=connect.prepareStatement(getAvg)) {
             pEnroll.setInt(1, sectionId);
-            try (ResultSet rs = pEnroll.executeQuery()) {
-                while (rs.next()) {
-                    int enrollmentId = rs.getInt("enrollment_id");
-                    BigDecimal scoreToAdd = null;
-
+            try (ResultSet resultSet = pEnroll.executeQuery()) {
+                while (resultSet.next()) {
+                    int enrollmentId=resultSet.getInt("enrollment_id");
+                    BigDecimal scoreToAdd=null;
                     pFinal.setInt(1, enrollmentId);
-                    try (ResultSet rsFinal = pFinal.executeQuery()) {
+                    try (ResultSet rsFinal=pFinal.executeQuery()) {
                         if (rsFinal.next()) {
-                            scoreToAdd = rsFinal.getBigDecimal("score");
+                            scoreToAdd=rsFinal.getBigDecimal("score");
                         }
-                    }
-                    
-                    if (scoreToAdd == null) {
+                    } 
+                    if (scoreToAdd==null) {
                         pAvg.setInt(1, enrollmentId);
-                        try (ResultSet rsAvg = pAvg.executeQuery()) {
+                        try (ResultSet rsAvg=pAvg.executeQuery()) {
                             if (rsAvg.next()) {
-                                scoreToAdd = rsAvg.getBigDecimal("avg_score");
+                                scoreToAdd=rsAvg.getBigDecimal("avg_score");
                             }
                         }
                     }                 
-                    if (scoreToAdd != null) {
+                    if (scoreToAdd!=null) {
                         scores.addElement(scoreToAdd);
                     }
                 }
             }
-        } catch (SQLException exception) {
+        } 
+        catch (SQLException exception) {
             exception.printStackTrace();
             JOptionPane.showMessageDialog(this, "Failed to load stats: " + exception.getMessage(), "DB Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         int n=scores.getSize();
-        if (n==0) {
+        if (n==0){
             lblCount.setText("Count: 0");
             lblAvg.setText("Average: -");
             lblMin.setText("Min Score: -");
@@ -154,43 +150,51 @@ public class ClassStatsPanel extends JPanel {
             return;
         }
 
-        // ---------- replace your for-loop and avg/labels part with this ----------
-BigDecimal sum = BigDecimal.ZERO;
-BigDecimal min = null;
-BigDecimal max = null;
-Map<String, Integer> bucket=new HashMap<>();
-bucket.put("A (90-100)", 0);
-bucket.put("B (80-89)", 0);
-bucket.put("C (70-79)", 0);
-bucket.put("D (60-69)", 0);
-bucket.put("F (0-59)", 0);
+    BigDecimal sum = BigDecimal.ZERO;
+    BigDecimal min = null;
+    BigDecimal max = null;
+    Map<String, Integer> bucket=new HashMap<>();    
+
+    bucket.put("A (90-100)", 0);
+    bucket.put("B (80-89)", 0);
+    bucket.put("C (70-79)", 0);
+    bucket.put("D (60-69)", 0);
+    bucket.put("F (0-59)", 0);
 
 for (int i = 0; i < n; i++) {
-    BigDecimal v = scores.get(i);
-    if (v == null) continue;
-
+    BigDecimal v=scores.get(i);
+    if (v == null) {
+        continue;
+    }
     sum = sum.add(v);
-
-    // null-safe comparisons — check null first
-    if (min == null || v.compareTo(min) < 0) {
-        min = v;
+    if ( v.compareTo(min) < 0||min == null ) {
+        min=v;
     }
-    if (max == null || v.compareTo(max) > 0) {
-        max = v;
+    if ( v.compareTo(max) > 0 || max == null ) {
+        max=v;
     }
 
-    double dv = v.doubleValue();
-    if (dv >= 90) bucket.put("A (90-100)", bucket.get("A (90-100)") + 1);
-    else if (dv >= 80) bucket.put("B (80-89)", bucket.get("B (80-89)") + 1);
-    else if (dv >= 70) bucket.put("C (70-79)", bucket.get("C (70-79)") + 1);
-    else if (dv >= 60) bucket.put("D (60-69)", bucket.get("D (60-69)") + 1);
-    else bucket.put("F (0-59)", bucket.get("F (0-59)") + 1);
+    double dv=v.doubleValue();
+    if (dv >= 90) {
+        bucket.put("A (90-100)", bucket.get("A (90-100)") + 1);
+    }
+    else if (dv >= 80) {
+        bucket.put("B (80-89)", bucket.get("B (80-89)") + 1);
+    }
+    else if (dv >= 70) {
+        bucket.put("C (70-79)", bucket.get("C (70-79)") + 1);
+    }
+    else if (dv >= 60) {
+        bucket.put("D (60-69)", bucket.get("D (60-69)") + 1);
+    }
+    else {
+        bucket.put("F (0-59)", bucket.get("F (0-59)") + 1);
+    }
 }
 
-// guard divide-by-zero and format average
-BigDecimal avg = BigDecimal.ZERO;
-if (n > 0) {
-    avg = sum.divide(BigDecimal.valueOf(n), 2, BigDecimal.ROUND_HALF_UP);
+BigDecimal avg=BigDecimal.ZERO;
+if (n>0){
+    avg=sum.divide(BigDecimal.valueOf(n), 2, BigDecimal.ROUND_HALF_UP);
 }
 
 lblCount.setText("Count: " + n);
@@ -198,12 +202,10 @@ lblAvg.setText("Average: " + avg.toPlainString() + "%");
 lblMin.setText("Min Score: " + (min == null ? "-" : min.toPlainString()) + "%");
 lblMax.setText("Max Score: " + (max == null ? "-" : max.toPlainString()) + "%");
 
-// build distribution text
-StringBuilder sb = new StringBuilder();
-sb.append("Grade Distribution (Counts):\n\n");
-bucket.keySet().stream().sorted().forEach(key -> sb.append(String.format("%s : %d%n", key, bucket.get(key))));
-taDistribution.setText(sb.toString());
-// -------------------------------------------------------------------------
+StringBuilder strbuild = new StringBuilder();
+strbuild.append("Grade Distribution (Counts):\n\n");
+bucket.keySet().stream().sorted().forEach(key -> strbuild.append(String.format("%s : %d%n", key, bucket.get(key))));
+taDistribution.setText(strbuild.toString());
 
     }
 }
